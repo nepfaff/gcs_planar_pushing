@@ -6,8 +6,11 @@ setup(
     packages=["gcs_planar_pushing"],
     install_requires=[
         "numpy",
+        "matplotlib",
+        "ipywidgets",
         "pre-commit",
         "manipulation",
+        "underactuated",
         "pydrake",
         "black",
     ],
