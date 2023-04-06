@@ -48,9 +48,9 @@ class PlanarCubeTeleopController(ControllerBase):
         sphere_controller = builder.AddSystem(
             InverseDynamicsController(
                 sphere_controller_plant,
-                kp=[self._sphere_pid_gains["kp"]] * self._num_sphere_positions,
-                ki=[self._sphere_pid_gains["ki"]] * self._num_sphere_positions,
-                kd=[self._sphere_pid_gains["kd"]] * self._num_sphere_positions,
+                kp=[self._sphere_pid_gains.kp] * self._num_sphere_positions,
+                ki=[self._sphere_pid_gains.ki] * self._num_sphere_positions,
+                kd=[self._sphere_pid_gains.kd] * self._num_sphere_positions,
                 has_reference_acceleration=False,
             )
         )
@@ -66,9 +66,9 @@ class PlanarCubeTeleopController(ControllerBase):
         return sphere_controller
 
     def _setup_sphere_teleop(self, builder: DiagramBuilder) -> System:
-        input_limit = self._teleop_config["input_limit"]
-        step = self._teleop_config["step_size"]
-        sphere_starting_translation = self._teleop_config["start_translation"]
+        input_limit = self._teleop_config.input_limit
+        step = self._teleop_config.step_size
+        sphere_starting_translation = self._teleop_config.start_translation
         self._meshcat.AddSlider(
             "x",
             min=-input_limit,
