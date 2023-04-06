@@ -13,5 +13,7 @@ setup(
         "underactuated",
         "pydrake",
         "black",
+        "hydra-core",
+        "omegaconf",
     ],
 )

@@ -1,7 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pydrake.all import *
+from pydrake.all import (
+    StartMeshcat,
+    DiagramBuilder,
+    AddMultibodyPlantSceneGraph,
+    Parser,
+    RigidTransform,
+    RotationMatrix,
+    MeshcatVisualizer,
+    MultibodyPlant,
+    InverseDynamicsController,
+    Multiplexer,
+    StateInterpolatorWithDiscreteDerivative,
+    plot_system_graphviz,
+    Simulator,
+)
 from underactuated.meshcat_utils import MeshcatSliders
 
 meshcat = StartMeshcat()

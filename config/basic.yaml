@@ -1,0 +1,4 @@
+environment:
+  _target_: gcs_planar_pushing.environments.planar_cube_environment.PlanarCubeEnvironment
+  controller:
+    _target_: gcs_planar_pushing.controllers.planar_cube_teleop_controller.PlanarCubeTeleopController
