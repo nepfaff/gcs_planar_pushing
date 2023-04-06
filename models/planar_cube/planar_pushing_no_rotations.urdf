@@ -2,7 +2,7 @@
 
 <robot xmlns="http://drake.mit.edu"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- name="CartPole">
+ name="PlanarPushingNoRotations">
 
   <link name="world">
     <visual>

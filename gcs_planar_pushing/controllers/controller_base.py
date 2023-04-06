@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 
-## TODO:
-## Define controller API.
-## Should this be an abstract python class or a Drake Leafsystem?
+from pydrake.all import DiagramBuilder, MultibodyPlant
 
 
 class ControllerBase(ABC):
     """The controller base class."""
 
-    def __init__(self):
-        pass
+    def __init__(self, time_step: float):
+        self._time_step = time_step
+
+    @abstractmethod
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+        """Setup the controller."""
+        raise NotImplementedError
