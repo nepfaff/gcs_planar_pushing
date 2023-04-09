@@ -26,16 +26,21 @@ class PlanarCubeGCSController(ControllerBase):
     def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
         super().setup(builder, plant)
 
-    def plan_for_box_pushing(self):
+    def plan_for_box_pushing_3d(self):
         # Bezier curve params
-        problem_dim = 2
+        problem_dim = 3
         bezier_curve_order = 1
 
         mass = 1  # kg
         g = 9.81  # m/s^2
         mg = mass * g
-        box_width = 2
+        # Depth, width, height are 0.5* actual values
+        box_width = 1
         box_height = 1
+        box_depth = 1
+        floor_width = 20
+        floor_height = 20
+        floor_depth = 1
         friction_coeff = 0.5
 
         finger = RigidBody(
@@ -52,6 +57,7 @@ class PlanarCubeGCSController(ControllerBase):
             geometry="box",
             width=box_width,
             height=box_height,
+            depth=box_depth,
             actuated=False,
         )
         ground = RigidBody(
@@ -59,18 +65,22 @@ class PlanarCubeGCSController(ControllerBase):
             position_curve_order=bezier_curve_order,
             name="g",
             geometry="box",
-            width=20,
-            height=box_height,
+            width=floor_width,
+            height=floor_height,
+            depth=floor_depth,
             actuated=True,
         )
         rigid_bodies = [finger, box, ground]
 
         x_f = finger.pos_x
         y_f = finger.pos_y
+        z_f = finger.pos_z
         x_b = box.pos_x
         y_b = box.pos_y
+        z_b = box.pos_z
         x_g = ground.pos_x
         y_g = ground.pos_y
+        z_g = ground.pos_z
 
         p1 = CollisionPair(
             finger,
@@ -82,12 +92,12 @@ class PlanarCubeGCSController(ControllerBase):
             box,
             ground,
             friction_coeff,
-            position_mode=PositionModeType.TOP,  # Box on top of ground
+            position_mode=PositionModeType.FRONT,  # Box on top of ground
         )
         collision_pairs = [p1, p2]
 
         # Specify problem
-        no_ground_motion = [eq(x_g, 0), eq(y_g, -1)]
+        no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
         additional_constraints = [
             *no_ground_motion,
         ]
@@ -98,9 +108,11 @@ class PlanarCubeGCSController(ControllerBase):
             },
             additional_constraints=[
                 eq(x_f, 0),
-                eq(y_f, 0.6),
+                eq(y_f, 0),
+                eq(z_f, box_depth),
                 eq(x_b, 6.0),
-                eq(y_b, box_height),
+                eq(y_b, 0.0),
+                eq(z_b, box_depth),
             ],
         )
         target_config = ContactModeConfig(
@@ -108,11 +120,18 @@ class PlanarCubeGCSController(ControllerBase):
                 p1.name: ContactModeType.NO_CONTACT,
                 p2.name: ContactModeType.ROLLING,
             },
-            additional_constraints=[eq(x_b, 10.0), eq(y_b, box_height), eq(x_f, 0.0)],
+            additional_constraints=[
+                eq(x_b, 10.0),
+                eq(y_b, 0.0),
+                eq(z_b, box_depth),
+                eq(x_f, 0.0),
+                eq(y_f, 0.0),
+                eq(z_f, box_depth),
+            ],
         )
 
         # TODO this is very hardcoded
-        gravitational_jacobian = np.array([[0, -1, 0, -1, 0, -1]]).T
+        gravitational_jacobian = np.array([[0, 0, -1, 0, 0, -1, 0, 0, -1]]).T
         external_forces = gravitational_jacobian.dot(mg)
 
         planner = GcsContactPlanner(
