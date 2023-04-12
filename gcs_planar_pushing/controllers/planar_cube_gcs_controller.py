@@ -98,9 +98,8 @@ class PlanarCubeGCSController(ControllerBase):
 
         # Specify problem
         no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
-        additional_constraints = [
-            *no_ground_motion,
-        ]
+        no_vertical_movement = [eq(z_f, box_depth), eq(z_b, box_depth)]
+        additional_constraints = [*no_ground_motion, *no_vertical_movement]
         source_config = ContactModeConfig(
             modes={
                 p1.name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
@@ -109,10 +108,8 @@ class PlanarCubeGCSController(ControllerBase):
             additional_constraints=[
                 eq(x_f, 0),
                 eq(y_f, 0),
-                eq(z_f, box_depth),
                 eq(x_b, 6.0),
                 eq(y_b, 0.0),
-                eq(z_b, box_depth),
             ],
         )
         target_config = ContactModeConfig(
@@ -123,10 +120,8 @@ class PlanarCubeGCSController(ControllerBase):
             additional_constraints=[
                 eq(x_b, 10.0),
                 eq(y_b, 0.0),
-                eq(z_b, box_depth),
                 eq(x_f, 0.0),
                 eq(y_f, 0.0),
-                eq(z_f, box_depth),
             ],
         )
 
