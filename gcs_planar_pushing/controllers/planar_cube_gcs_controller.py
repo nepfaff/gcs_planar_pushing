@@ -1,9 +1,11 @@
 from .controller_base import ControllerBase
 
+from functools import reduce
+
 from pydrake.all import DiagramBuilder, MultibodyPlant
 import numpy as np
 from pydrake.math import eq
-from planning_through_contact.geometry.collision_pair import CollisionPair
+from planning_through_contact.geometry.object_pair import ObjectPair
 from planning_through_contact.geometry.contact_mode import (
     ContactModeType,
     PositionModeType,
@@ -82,19 +84,29 @@ class PlanarCubeGCSController(ControllerBase):
         y_g = ground.pos_y
         z_g = ground.pos_z
 
-        p1 = CollisionPair(
+        p1 = ObjectPair(
             finger,
             box,
             friction_coeff,
-            position_mode=PositionModeType.LEFT,  # Finger on left side of box
+            allowed_position_modes=[
+                PositionModeType.LEFT,
+                PositionModeType.TOP_LEFT,
+                PositionModeType.TOP,
+                PositionModeType.TOP_RIGHT,
+                PositionModeType.RIGHT,
+            ],  # TODO: extend
         )
-        p2 = CollisionPair(
+        p2 = ObjectPair(
             box,
             ground,
             friction_coeff,
-            position_mode=PositionModeType.FRONT,  # Box on top of ground
+            allowed_position_modes=[PositionModeType.FRONT],
         )
-        collision_pairs = [p1, p2]
+        object_pairs = [p1, p2]
+        contact_pairs_nested = [
+            object_pair.contact_pairs for object_pair in object_pairs
+        ]
+        contact_pairs = reduce(lambda a, b: a + b, contact_pairs_nested)
 
         # Specify problem
         no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
@@ -102,8 +114,12 @@ class PlanarCubeGCSController(ControllerBase):
         additional_constraints = [*no_ground_motion, *no_vertical_movement]
         source_config = ContactModeConfig(
             modes={
-                p1.name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
-                p2.name: ContactModeType.ROLLING,  # Box in contact with floor
+                contact_pairs[
+                    0
+                ].name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
+                contact_pairs[
+                    -1
+                ].name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
                 eq(x_f, 0),
@@ -112,16 +128,32 @@ class PlanarCubeGCSController(ControllerBase):
                 eq(y_b, 0.0),
             ],
         )
-        target_config = ContactModeConfig(
+        # target_config = ContactModeConfig(
+        #     modes={
+        #         contact_pairs[0].name: ContactModeType.NO_CONTACT,
+        #         contact_pairs[2].name: ContactModeType.ROLLING,
+        #     },
+        #     additional_constraints=[
+        #         eq(x_b, 10.0),
+        #         eq(y_b, 0.0),
+        #         eq(x_f, 0.0),
+        #         eq(y_f, 0.0),
+        #     ],
+        # )
+        target_config = ContactModeConfig(  # Move around box
             modes={
-                p1.name: ContactModeType.NO_CONTACT,
-                p2.name: ContactModeType.ROLLING,
+                contact_pairs[
+                    -2
+                ].name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
+                contact_pairs[
+                    -1
+                ].name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
-                eq(x_b, 10.0),
+                eq(x_f, 10),
+                eq(y_f, 0),
+                eq(x_b, 6.0),
                 eq(y_b, 0.0),
-                eq(x_f, 0.0),
-                eq(y_f, 0.0),
             ],
         )
 
@@ -131,7 +163,7 @@ class PlanarCubeGCSController(ControllerBase):
 
         planner = GcsContactPlanner(
             rigid_bodies,
-            collision_pairs,
+            object_pairs,
             external_forces,
             additional_constraints,
             allow_sliding=True,
@@ -142,9 +174,9 @@ class PlanarCubeGCSController(ControllerBase):
         # intersecting sets. A convex contact mode set is constructed from the constraints
         # that hold for that contact mode.
         planner.build_graph(prune=False)
-        planner.save_graph_diagram("graph_box_pushing.svg")
+        # planner.save_graph_diagram("graph_box_pushing.svg")
         planner.allow_revisits_to_vertices(1)  # Why do we need this?
-        planner.save_graph_diagram("graph_box_pushing_with_revisits.svg")
+        # planner.save_graph_diagram("graph_box_pushing_with_revisits.svg")
 
         # TODO add weights here
         planner.add_position_continuity_constraints()
