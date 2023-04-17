@@ -175,7 +175,7 @@ class PlanarCubeGCSController(ControllerBase):
         # that hold for that contact mode.
         planner.build_graph(prune=False)
         # planner.save_graph_diagram("graph_box_pushing.svg")
-        planner.allow_revisits_to_vertices(1)  # Why do we need this?
+        # planner.allow_revisits_to_vertices(1)
         # planner.save_graph_diagram("graph_box_pushing_with_revisits.svg")
 
         # TODO add weights here
@@ -185,7 +185,7 @@ class PlanarCubeGCSController(ControllerBase):
         planner.add_num_visited_vertices_cost(100)
         planner.add_force_strength_cost()
 
-        result = planner.solve()
+        result = planner.solve(use_convex_relaxation=True)
         ctrl_points = planner.get_ctrl_points(result)
         (
             pos_curves,
