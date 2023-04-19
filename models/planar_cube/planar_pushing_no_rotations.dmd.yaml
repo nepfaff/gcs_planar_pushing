@@ -13,3 +13,15 @@ directives:
     child: floor::floor
     X_PC:
         translation: [0.0, 0.0, -0.5]
+- add_frame:
+    name: camera0_origin
+    X_PF:
+        base_frame: world
+        rotation: !Rpy { deg: [0, 180, 0]}
+        translation: [0, 0, 100]
+- add_model:
+    name: camera0
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: camera0_origin
+    child: camera0::base

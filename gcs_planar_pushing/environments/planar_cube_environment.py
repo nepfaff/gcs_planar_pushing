@@ -1,6 +1,7 @@
 import atexit
 from typing import List
-
+from gcs_planar_pushing.images.image_generator import ImageGenerator
+import matplotlib.pyplot as plt
 from pydrake.all import (
     StartMeshcat,
     DiagramBuilder,
@@ -10,6 +11,7 @@ from pydrake.all import (
     MeshcatVisualizer,
     Simulator,
 )
+from gcs_planar_pushing.utils.util import AddRgbdSensors
 
 from .environment_base import EnvironmentBase
 from gcs_planar_pushing.controllers import ControllerBase
@@ -44,6 +46,10 @@ class PlanarCubeEnvironment(EnvironmentBase):
         parser.AddAllModelsFromFile(self._scene_directive_path)
         plant.Finalize()
 
+        AddRgbdSensors(builder,
+                   plant,
+                   scene_graph)
+        
         MeshcatVisualizer.AddToBuilder(builder, scene_graph, self._meshcat)
 
         # Setup controller
@@ -69,6 +75,14 @@ class PlanarCubeEnvironment(EnvironmentBase):
             plant.SetPositions(
                 plant_context, box_model_instance, self._initial_cube_translation
             )
+        
+        # Set up image generator
+        self._image_generator = ImageGenerator(max_depth_range=10.0, diagram=diagram, scene_graph=scene_graph)
+
+        # Test image generator
+        rgb_image, depth_image, object_labels, masks = self._image_generator.get_camera_data(camera_name="camera0", context=self._simulator.get_context())
+        plt.imshow(rgb_image)
+        plt.show()
 
     def simulate(self) -> None:
         print("Use the slider in the MeshCat controls to apply force to sphere.")
