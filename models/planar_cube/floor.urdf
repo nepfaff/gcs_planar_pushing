@@ -11,13 +11,13 @@
         <box size="10 10 0.2" />
       </geometry>
       <material>
-        <color rgba="0.93 .74 .4 0.8" />
+        <color rgba="1 1 1 1" />
       </material>
     </visual>
     <collision name="collision">
         <origin xyz="0 0 -0.2" rpy="0 0 0" />
         <geometry>
-          <box size="10 10 0.2" />
+          <box size="50 50 0.2" />
         </geometry>
         <surface>
           <friction>
