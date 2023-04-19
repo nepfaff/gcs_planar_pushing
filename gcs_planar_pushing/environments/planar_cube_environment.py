@@ -58,11 +58,17 @@ class PlanarCubeEnvironment(EnvironmentBase):
         context = self._simulator.get_mutable_context()
         plant_context = plant.GetMyMutableContextFromRoot(context)
         box = plant.GetBodyByName("box")
-        plant.SetFreeBodyPose(
-            plant_context,
-            box,
-            RigidTransform(RotationMatrix(), self._initial_cube_translation),
-        )
+        box_model_instance = box.model_instance()
+        if box.is_floating():
+            plant.SetFreeBodyPose(
+                plant_context,
+                box,
+                RigidTransform(RotationMatrix(), self._initial_cube_translation),
+            )
+        else:
+            plant.SetPositions(
+                plant_context, box_model_instance, self._initial_cube_translation
+            )
 
     def simulate(self) -> None:
         print("Use the slider in the MeshCat controls to apply force to sphere.")

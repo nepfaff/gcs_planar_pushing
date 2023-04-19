@@ -1,7 +1,7 @@
 import os
 
 from pydrake.all import MultibodyPlant, Parser
-from manipulation.scenarios import AddPackagePaths
+from manipulation.utils import AddPackagePaths
 
 
 def get_parser(plant: MultibodyPlant) -> Parser:
