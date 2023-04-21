@@ -1,7 +1,7 @@
 from .controller_base import ControllerBase
 
 from functools import reduce
-from typing import Dict
+from typing import Dict, List
 
 from pydrake.all import (
     DiagramBuilder,
@@ -93,7 +93,10 @@ class PlanarCubeGCSController(ControllerBase):
         return sphere_controller
 
     def _setup_open_loop_control(self, builder: DiagramBuilder) -> System:
-        finger_position_path = self._plan_for_box_pushing_3d(visualize=False)
+        finger_position_path = self._plan_for_box_pushing_3d(
+            initial_box_position=self._initial_box_position,
+            initial_finger_position=self._initial_finger_position,
+        )
         step_length_seconds = 0.01
         finger_position_source = builder.AddSystem(
             PositionSource(
@@ -130,7 +133,12 @@ class PlanarCubeGCSController(ControllerBase):
             sphere_controller.get_input_port_desired_state(),
         )
 
-    def _plan_for_box_pushing_3d(self, visualize=True) -> np.ndarray:
+    def _plan_for_box_pushing_3d(
+        self,
+        initial_finger_position: List[float],
+        initial_box_position: List[float],
+        visualize=True,
+    ) -> np.ndarray:
         """Creates a planar pushing path.
 
         Args:
@@ -147,9 +155,9 @@ class PlanarCubeGCSController(ControllerBase):
         g = 9.81  # m/s^2
         mg = mass * g
         # Depth, width, height are 0.5* actual values
-        box_width = 1
-        box_height = 1
-        box_depth = 1
+        box_width = 0.5
+        box_height = 0.5
+        box_depth = 0.5
         floor_width = 20
         floor_height = 20
         floor_depth = 1
@@ -244,22 +252,20 @@ class PlanarCubeGCSController(ControllerBase):
                 ].name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
-                eq(x_f, 0),
-                eq(y_f, 0),
-                eq(x_b, 6.0),
-                eq(y_b, 0.0),
+                eq(x_f, initial_finger_position[0]),
+                eq(y_f, initial_finger_position[1]),
+                eq(x_b, initial_box_position[0]),
+                eq(y_b, initial_box_position[1]),
             ],
         )
         target_config = ContactModeConfig(
             modes={
-                contact_pairs[-2].name: ContactModeType.NO_CONTACT,
+                contact_pairs[-2].name: ContactModeType.ROLLING,
                 contact_pairs[-1].name: ContactModeType.ROLLING,
             },
             additional_constraints=[
-                eq(x_b, 2.0),
+                eq(x_b, 0.0),
                 eq(y_b, 0.0),
-                eq(x_f, 8.0),
-                eq(y_f, 0.0),
             ],
         )
 

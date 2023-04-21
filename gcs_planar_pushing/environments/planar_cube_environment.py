@@ -27,11 +27,16 @@ class PlanarCubeEnvironment(EnvironmentBase):
         controller: ControllerBase,
         time_step: float,
         scene_directive_path: str,
-        initial_cube_translation: List[float],
+        initial_box_position: List[float],
+        initial_finger_position: List[float],
     ):
         super().__init__(controller, time_step, scene_directive_path)
 
-        self._initial_cube_translation = initial_cube_translation
+        self._initial_box_position = initial_box_position
+        self._initial_finger_position = initial_finger_position
+        self._controller.set_initial_state(
+            initial_box_position, initial_finger_position
+        )
 
         self._meshcat = None
         self._simulator = None
@@ -76,11 +81,11 @@ class PlanarCubeEnvironment(EnvironmentBase):
             plant.SetFreeBodyPose(
                 plant_context,
                 box,
-                RigidTransform(RotationMatrix(), self._initial_cube_translation),
+                RigidTransform(RotationMatrix(), self._initial_box_position),
             )
         else:
             plant.SetPositions(
-                plant_context, box_model_instance, self._initial_cube_translation
+                plant_context, box_model_instance, self._initial_box_position
             )
 
         # Set up image generator

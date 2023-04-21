@@ -2,7 +2,8 @@ _target_: gcs_planar_pushing.environments.planar_cube_environment.PlanarCubeEnvi
 
 time_step: 1e-3
 scene_directive_path: models/planar_cube/planar_pushing_no_rotations.dmd.yaml
-initial_cube_translation: [1.0, 0.25]
+initial_box_position: [2, 0.0]
+initial_finger_position: [0.0, 0.0]
 
 defaults:
   - controller: gcs_open_loop

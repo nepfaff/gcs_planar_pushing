@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 from pydrake.all import DiagramBuilder, MultibodyPlant, Meshcat
 
@@ -24,3 +25,9 @@ class ControllerBase(ABC):
 
     def add_meshcat(self, meshcat: Meshcat) -> None:
         self._meshcat = meshcat
+
+    def set_initial_state(
+        self, initial_box_position: List[float], initial_finger_position: List[float]
+    ):
+        self._initial_box_position = initial_box_position
+        self._initial_finger_position = initial_finger_position
