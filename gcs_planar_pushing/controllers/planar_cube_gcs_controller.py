@@ -1,8 +1,16 @@
 from .controller_base import ControllerBase
 
 from functools import reduce
+from typing import Dict
 
-from pydrake.all import DiagramBuilder, MultibodyPlant
+from pydrake.all import (
+    DiagramBuilder,
+    MultibodyPlant,
+    LeafSystem,
+    InverseDynamicsController,
+    StateInterpolatorWithDiscreteDerivative,
+    System,
+)
 import numpy as np
 from pydrake.math import eq
 from planning_through_contact.geometry.object_pair import ObjectPair
@@ -18,17 +26,119 @@ from planning_through_contact.visualize.visualize import (
     plot_positions_and_forces,
 )
 
+from gcs_planar_pushing.utils import get_parser
+
+
+class PositionSource(LeafSystem):
+    def __init__(self, pos_path: np.ndarray, step_length_seconds: float):
+        LeafSystem.__init__(self)
+        self._pos_path = pos_path
+        self._step_length_seconds = step_length_seconds
+
+        self.DeclareVectorOutputPort(
+            "pos_desired", pos_path.shape[1], self._get_next_pos
+        )
+
+    def _get_next_pos(self, context, output):
+        idx = int(context.get_time() // self._step_length_seconds)
+        if idx >= len(self._pos_path):
+            output.SetFromVector(self._pos_path[-1])
+        else:
+            output.SetFromVector(self._pos_path[idx])
+
 
 class PlanarCubeGCSController(ControllerBase):
     """An open-loop GCS controller."""
 
-    def __init__(self, time_step: float):
+    def __init__(
+        self,
+        time_step: float,
+        sphere_pid_gains: Dict[str, float],
+    ):
         super().__init__(time_step)
 
-    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
-        super().setup(builder, plant)
+        self._sphere_pid_gains = sphere_pid_gains
+        self._num_sphere_positions = 2
 
-    def plan_for_box_pushing_3d(self):
+    def _setup_sphere_controller(
+        self, builder: DiagramBuilder, plant: MultibodyPlant
+    ) -> System:
+        sphere_model_instance = plant.GetModelInstanceByName("sphere")
+        sphere_controller_plant = MultibodyPlant(time_step=self._time_step)
+        parser = get_parser(sphere_controller_plant)
+        parser.AddModelsFromUrl(
+            "package://gcs_planar_pushing/models/planar_cube/actuated_sphere.urdf"
+        )[0]
+        sphere_controller_plant.set_name("sphere_controller_plant")
+        sphere_controller_plant.Finalize()
+
+        sphere_controller = builder.AddSystem(
+            InverseDynamicsController(
+                sphere_controller_plant,
+                kp=[self._sphere_pid_gains.kp] * self._num_sphere_positions,
+                ki=[self._sphere_pid_gains.ki] * self._num_sphere_positions,
+                kd=[self._sphere_pid_gains.kd] * self._num_sphere_positions,
+                has_reference_acceleration=False,
+            )
+        )
+        sphere_controller.set_name("sphere_controller")
+        builder.Connect(
+            plant.get_state_output_port(sphere_model_instance),
+            sphere_controller.get_input_port_estimated_state(),
+        )
+        builder.Connect(
+            sphere_controller.get_output_port_control(),
+            plant.get_actuation_input_port(sphere_model_instance),
+        )
+        return sphere_controller
+
+    def _setup_open_loop_control(self, builder: DiagramBuilder) -> System:
+        finger_position_path = self._plan_for_box_pushing_3d(visualize=False)
+        step_length_seconds = 0.01
+        finger_position_source = builder.AddSystem(
+            PositionSource(
+                finger_position_path, step_length_seconds=step_length_seconds
+            )
+        )
+        self._sim_duration = step_length_seconds * len(finger_position_path)
+
+        # Add discrete derivative to command velocities.
+        desired_state_source = builder.AddSystem(
+            StateInterpolatorWithDiscreteDerivative(
+                self._num_sphere_positions,
+                self._time_step,
+                suppress_initial_transient=True,
+            )
+        )
+        desired_state_source.set_name("gcs_open_loop_desired_state_source")
+        builder.Connect(
+            finger_position_source.get_output_port(),
+            desired_state_source.get_input_port(),
+        )
+        return desired_state_source
+
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+        if self._meshcat is None:
+            raise RuntimeError(
+                "Need to call `add_meshcat` before calling `setup` of the teleop controller."
+            )
+
+        sphere_controller = self._setup_sphere_controller(builder, plant)
+        finger_state_source = self._setup_open_loop_control(builder)
+        builder.Connect(
+            finger_state_source.get_output_port(),
+            sphere_controller.get_input_port_desired_state(),
+        )
+
+    def _plan_for_box_pushing_3d(self, visualize=True) -> np.ndarray:
+        """Creates a planar pushing path.
+
+        Args:
+            visualize (bool, optional): Whether to visualize the plan. Defaults to True.
+
+        Returns:
+            np.ndarray: The finger position path of shape (N, 3).
+        """
         # Bezier curve params
         problem_dim = 3
         bezier_curve_order = 1
@@ -189,7 +299,10 @@ class PlanarCubeGCSController(ControllerBase):
             friction_force_curves,
         ) = planner.get_curves_from_ctrl_points(ctrl_points)
 
-        plot_positions_and_forces(
-            pos_curves, normal_force_curves, friction_force_curves
-        )
-        animate_positions(pos_curves, rigid_bodies)
+        if visualize:
+            plot_positions_and_forces(
+                pos_curves, normal_force_curves, friction_force_curves
+            )
+            animate_positions(pos_curves, rigid_bodies)
+
+        return pos_curves["f"][:, :2]

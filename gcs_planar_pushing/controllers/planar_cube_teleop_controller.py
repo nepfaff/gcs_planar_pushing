@@ -6,7 +6,6 @@ from pydrake.all import (
     InverseDynamicsController,
     Multiplexer,
     StateInterpolatorWithDiscreteDerivative,
-    Meshcat,
     System,
 )
 from underactuated.meshcat_utils import MeshcatSliders
@@ -29,9 +28,6 @@ class PlanarCubeTeleopController(ControllerBase):
         self._sphere_pid_gains = sphere_pid_gains
         self._teleop_config = teleop
         self._num_sphere_positions = 2
-
-    def add_meshcat(self, meshcat: Meshcat) -> None:
-        self._meshcat = meshcat
 
     def _setup_sphere_controller(
         self, builder: DiagramBuilder, plant: MultibodyPlant

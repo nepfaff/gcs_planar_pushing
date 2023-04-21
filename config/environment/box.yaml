@@ -1,0 +1,7 @@
+_target_: gcs_planar_pushing.environments.planar_cube_environment.PlanarCubeEnvironment
+
+time_step: 1e-3
+scene_directive_path: models/planar_cube/planar_pushing.dmd.yaml
+initial_cube_translation: [1.0, 0.25, 0.5]
+
+controller: gcs_open_loop

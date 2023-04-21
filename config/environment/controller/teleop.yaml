@@ -1,0 +1,10 @@
+_target_: gcs_planar_pushing.controllers.planar_cube_teleop_controller.PlanarCubeTeleopController
+time_step: 1e-3
+sphere_pid_gains:
+  kp: 100
+  kd: 20
+  ki: 1
+teleop:
+  input_limit: 10.0
+  step_size: 0.1
+  start_translation: [0.0, 0.0] # Planar xy position

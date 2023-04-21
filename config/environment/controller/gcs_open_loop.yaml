@@ -1,0 +1,6 @@
+_target_: gcs_planar_pushing.controllers.planar_cube_gcs_controller.PlanarCubeGCSController
+time_step: 1e-3
+sphere_pid_gains:
+  kp: 100
+  kd: 20
+  ki: 1

@@ -10,7 +10,10 @@ from pydrake.all import (
     RotationMatrix,
     MeshcatVisualizer,
     Simulator,
+    MeshcatVisualizerParams,
+    Role,
 )
+import numpy as np
 from gcs_planar_pushing.utils.util import AddRgbdSensors
 
 from .environment_base import EnvironmentBase
@@ -27,7 +30,6 @@ class PlanarCubeEnvironment(EnvironmentBase):
         initial_cube_translation: List[float],
     ):
         super().__init__(controller, time_step, scene_directive_path)
-        atexit.register(self._cleanup)
 
         self._initial_cube_translation = initial_cube_translation
 
@@ -46,15 +48,20 @@ class PlanarCubeEnvironment(EnvironmentBase):
         parser.AddAllModelsFromFile(self._scene_directive_path)
         plant.Finalize()
 
-        AddRgbdSensors(builder,
-                   plant,
-                   scene_graph)
-        
-        MeshcatVisualizer.AddToBuilder(builder, scene_graph, self._meshcat)
+        AddRgbdSensors(builder, plant, scene_graph)
 
         # Setup controller
         self._controller.add_meshcat(self._meshcat)
         self._controller.setup(builder, plant)
+
+        visualizer_params = MeshcatVisualizerParams()
+        visualizer_params.role = Role.kIllustration
+        self._visualizer = MeshcatVisualizer.AddToBuilder(
+            builder,
+            scene_graph,
+            self._meshcat,
+            visualizer_params,
+        )
 
         diagram = builder.Build()
 
@@ -75,22 +82,34 @@ class PlanarCubeEnvironment(EnvironmentBase):
             plant.SetPositions(
                 plant_context, box_model_instance, self._initial_cube_translation
             )
-        
+
         # Set up image generator
-        self._image_generator = ImageGenerator(max_depth_range=10.0, diagram=diagram, scene_graph=scene_graph)
+        self._image_generator = ImageGenerator(
+            max_depth_range=10.0, diagram=diagram, scene_graph=scene_graph
+        )
 
         # Test image generator
-        rgb_image, depth_image, object_labels, masks = self._image_generator.get_camera_data(camera_name="camera0", context=self._simulator.get_context())
-        plt.imshow(rgb_image)
-        plt.show()
+        (
+            rgb_image,
+            depth_image,
+            object_labels,
+            masks,
+        ) = self._image_generator.get_camera_data(
+            camera_name="camera0", context=self._simulator.get_context()
+        )
+        # plt.imshow(rgb_image)
+        # plt.show()
 
     def simulate(self) -> None:
-        print("Use the slider in the MeshCat controls to apply force to sphere.")
         print("Press 'Stop Simulation' in MeshCat to continue.")
-        self._meshcat.AddButton("Stop Simulation")
-        while self._meshcat.GetButtonClicks("Stop Simulation") < 1:
-            self._simulator.AdvanceTo(self._simulator.get_context().get_time() + 1.0)
 
-    def _cleanup(self):
-        self._meshcat.DeleteAddedControls()
-        self._meshcat.Delete()
+        self._visualizer.StartRecording()
+
+        print(f"Meshcat URL: {self._meshcat.web_url()}")
+
+        sim_duration = self._controller.get_sim_duration()
+        for t in np.arange(0.0, sim_duration, self._time_step):
+            self._simulator.AdvanceTo(t)
+
+        self._visualizer.StopRecording()
+        self._visualizer.PublishRecording()
