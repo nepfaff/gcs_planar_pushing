@@ -208,10 +208,13 @@ class PlanarCubeGCSController(ControllerBase):
             friction_coeff,
             allowed_position_modes=[
                 PositionModeType.LEFT,
+                PositionModeType.BOTTOM_LEFT,
                 PositionModeType.TOP_LEFT,
                 PositionModeType.TOP,
                 PositionModeType.TOP_RIGHT,
                 PositionModeType.RIGHT,
+                PositionModeType.BOTTOM,
+                PositionModeType.BOTTOM_RIGHT,
             ],  # TODO: extend
             allowable_contact_mode_types=[
                 ContactModeType.NO_CONTACT,
@@ -245,7 +248,7 @@ class PlanarCubeGCSController(ControllerBase):
         source_config = ContactModeConfig(
             modes={
                 contact_pairs[
-                    0
+                    1
                 ].name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
                 contact_pairs[
                     -1
@@ -260,7 +263,7 @@ class PlanarCubeGCSController(ControllerBase):
         )
         target_config = ContactModeConfig(
             modes={
-                contact_pairs[-2].name: ContactModeType.ROLLING,
+                contact_pairs[5].name: ContactModeType.ROLLING,
                 contact_pairs[-1].name: ContactModeType.ROLLING,
             },
             additional_constraints=[
@@ -297,7 +300,7 @@ class PlanarCubeGCSController(ControllerBase):
         planner.add_num_visited_vertices_cost(100)
         planner.add_force_strength_cost()
 
-        result = planner.solve(use_convex_relaxation=True)
+        result = planner.solve(use_convex_relaxation=False)
         ctrl_points = planner.get_ctrl_points(result)
         (
             pos_curves,
