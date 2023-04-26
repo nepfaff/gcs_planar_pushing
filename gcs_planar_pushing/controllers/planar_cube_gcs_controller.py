@@ -215,6 +215,10 @@ class PlanarCubeGCSController(ControllerBase):
                 PositionModeType.RIGHT,
                 PositionModeType.BOTTOM,
                 PositionModeType.BOTTOM_RIGHT,
+                PositionModeType.LEFT_TRANSITION,
+                PositionModeType.RIGHT_TRANSITION,
+                PositionModeType.TOP_TRANSITION,
+                PositionModeType.BOTTOM_TRANSITION,
             ],  # TODO: extend
             allowable_contact_mode_types=[
                 ContactModeType.NO_CONTACT,
