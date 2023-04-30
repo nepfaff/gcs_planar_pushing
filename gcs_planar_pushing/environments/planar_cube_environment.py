@@ -19,7 +19,6 @@ from gcs_planar_pushing.utils.util import AddRgbdSensors
 from .environment_base import EnvironmentBase
 from gcs_planar_pushing.controllers import ControllerBase
 from gcs_planar_pushing.utils import get_parser
-from gcs_planar_pushing.utils.problem_generator import ProblemGenerator
 
 
 class PlanarCubeEnvironment(EnvironmentBase):
@@ -90,24 +89,16 @@ class PlanarCubeEnvironment(EnvironmentBase):
             )
         sphere = plant.GetBodyByName("sphere_actuated")
 
+        # This could be refactored to be cleaner
+        self.plant = plant
+        self.plant_context = plant_context
+        self.robot = sphere
+        self.object = box
+
         # Set up image generator
         self._image_generator = ImageGenerator(
             max_depth_range=10.0, diagram=diagram, scene_graph=scene_graph
         )
-
-        # Generate initial robot and box positions:
-        problem_generator = ProblemGenerator(
-            workspace_radius=10,
-            object_max_radius=0.5,
-            robot_max_radius=0.1,
-            plant=plant,
-            plant_context=plant_context,
-            robot=sphere,
-            object=box
-        )
-        object_pos, robot_pos = problem_generator.generate_problem(30)
-        print(f"Object position: {object_pos}")
-        print(f"Robot position: {robot_pos}")
 
         # Test image generator
         # (

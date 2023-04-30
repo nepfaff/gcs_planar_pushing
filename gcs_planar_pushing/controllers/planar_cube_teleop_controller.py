@@ -62,6 +62,8 @@ class PlanarCubeTeleopController(ControllerBase):
         return sphere_controller
 
     def _setup_sphere_teleop(self, builder: DiagramBuilder) -> System:
+        self._sim_duration = 5.0
+
         input_limit = self._teleop_config.input_limit
         step = self._teleop_config.step_size
         sphere_starting_translation = self._teleop_config.start_translation

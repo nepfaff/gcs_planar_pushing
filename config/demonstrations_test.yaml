@@ -1,0 +1,6 @@
+defaults:
+  - environment: box_no_rotations
+  - demonstrations: demonstrations
+
+demonstrations:
+  n_demonstrations: 30
