@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 
 from gcs_planar_pushing.controllers import ControllerBase
 
@@ -25,4 +26,8 @@ class EnvironmentBase(ABC):
     @abstractmethod
     def simulate(self) -> None:
         """Simulate the environment."""
+        raise NotImplementedError
+
+    def generate_data(self) -> np.array:
+        """Generate data from the environment."""
         raise NotImplementedError

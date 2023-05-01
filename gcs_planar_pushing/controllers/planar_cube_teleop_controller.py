@@ -110,3 +110,5 @@ class PlanarCubeTeleopController(ControllerBase):
             teleop_state_source.get_output_port(),
             sphere_controller.get_input_port_desired_state(),
         )
+
+        self.sphere_controller = sphere_controller

@@ -1,7 +1,7 @@
 """A script for generating demonstrations."""
 
 import pathlib
-
+import numpy as np
 import hydra
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
@@ -43,8 +43,11 @@ def main(cfg: OmegaConf):
         object=environment.object,
     )
     object_pos, robot_pos = problem_generator.generate_initial_positions()
-    print(f"Object position: {object_pos}")
-    print(f"Robot position: {robot_pos}")
+    # print(f"Object position: {object_pos}")
+    # print(f"Robot position: {robot_pos}")
+
+    # Override for testing:
+    # object_pos, robot_pos = np.array([[-1.0, 0.0]]), np.array([[-5.0, 0.0]])
 
     # Now use execution controller
     for i in tqdm(range(len(object_pos)), desc="Generating demonstrations"):
@@ -59,7 +62,8 @@ def main(cfg: OmegaConf):
             cfg.environment, controller=controller
         )
         environment.setup(meshcat)
-        environment.simulate()
+        image_data, state_data, action_data = environment.generate_data()
+        # Add data to ReplayBuffer
 
 
 if __name__ == "__main__":

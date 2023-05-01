@@ -90,6 +90,7 @@ class PlanarCubeGCSController(ControllerBase):
             sphere_controller.get_output_port_control(),
             plant.get_actuation_input_port(sphere_model_instance),
         )
+        builder.ExportOutput(sphere_controller.get_output_port_control(), "action")
         return sphere_controller
 
     def _setup_open_loop_control(self, builder: DiagramBuilder) -> System:
@@ -132,6 +133,8 @@ class PlanarCubeGCSController(ControllerBase):
             finger_state_source.get_output_port(),
             sphere_controller.get_input_port_desired_state(),
         )
+
+        self.sphere_controller = sphere_controller
 
     def _plan_for_box_pushing_3d(
         self,

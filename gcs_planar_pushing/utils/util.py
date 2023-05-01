@@ -35,6 +35,7 @@ def get_parser(plant: MultibodyPlant) -> Parser:
     parser.package_map().AddPackageXml(os.path.abspath("package.xml"))
     return parser
 
+
 def AddRgbdSensors(
     builder,
     plant,
@@ -51,6 +52,7 @@ def AddRgbdSensors(
     assume the name 'my_renderer', and create a VTK renderer if a renderer of
     that name doesn't exist.
     """
+    rgbd_sensors = []
     if sys.platform == "linux" and os.getenv("DISPLAY") is None:
         from pyvirtualdisplay import Display
 
@@ -61,26 +63,25 @@ def AddRgbdSensors(
         renderer = "my_renderer"
 
     if not scene_graph.HasRenderer(renderer):
-        scene_graph.AddRenderer(
-            renderer, MakeRenderEngineVtk(RenderEngineVtkParams())
-        )
+        scene_graph.AddRenderer(renderer, MakeRenderEngineVtk(RenderEngineVtkParams()))
 
     if not depth_camera:
         depth_camera = DepthRenderCamera(
             RenderCameraCore(
                 renderer,
-                CameraInfo(width=480,
-                           height=480,
-                           focal_x=10000,
-                           focal_y=10000,
-                           center_x=239.5,
-                           center_y=239.5),
+                CameraInfo(
+                    width=96,
+                    height=96,
+                    focal_x=900,
+                    focal_y=900,
+                    center_x=47.5,
+                    center_y=47.5,
+                ),
                 ClippingRange(near=0.1, far=150.0),
                 RigidTransform(),
             ),
             DepthRange(0.1, 10.0),
         )
-        
 
     for index in range(plant.num_model_instances()):
         model_instance_index = ModelInstanceIndex(index)
@@ -96,6 +97,7 @@ def AddRgbdSensors(
                     show_window=False,
                 )
             )
+            rgbd_sensors.append(rgbd)
             rgbd.set_name(model_name)
 
             builder.Connect(
@@ -167,3 +169,4 @@ def AddRgbdSensors(
                     to_point_cloud.point_cloud_output_port(),
                     f"{model_name}_point_cloud",
                 )
+    return rgbd_sensors
