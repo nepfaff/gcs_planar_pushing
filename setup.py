@@ -11,7 +11,6 @@ setup(
         "pre-commit",
         "manipulation",
         "underactuated",
-        "pydrake",
         "black",
         "hydra-core",
         "omegaconf",
