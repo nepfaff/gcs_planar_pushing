@@ -1,6 +1,7 @@
 defaults:
+  - controller: gcs_open_loop
   - environment: box_no_rotations
-  - demonstrations: demonstrations
+  - problem_generator: problem_generator
 
-demonstrations:
-  n_demonstrations: 30
+problem_generator:
+  n_samples: 3

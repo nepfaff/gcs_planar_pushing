@@ -1,0 +1,6 @@
+_target_: gcs_planar_pushing.utils.problem_generator.ProblemGenerator
+
+n_samples: 100
+workspace_radius: 10
+object_max_radius: 0.5
+robot_max_radius: 0.1

@@ -18,7 +18,7 @@ class EnvironmentBase(ABC):
 
         self._simulation_time = 0.0
 
-    def setup(self) -> None:
+    def setup(self, meshcat=None) -> None:
         """Sets up the Drake environment."""
         raise NotImplementedError
 

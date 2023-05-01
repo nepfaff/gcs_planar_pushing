@@ -1,2 +1,3 @@
 defaults:
   - environment: box_no_rotations
+  - controller: gcs_open_loop

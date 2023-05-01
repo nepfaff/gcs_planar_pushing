@@ -41,8 +41,11 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._meshcat = None
         self._simulator = None
 
-    def setup(self) -> None:
-        self._meshcat = StartMeshcat()
+    def setup(self, meshcat=None) -> None:
+        if meshcat is None:
+            self._meshcat = StartMeshcat()
+        else:
+            self._meshcat = meshcat
 
         # Setup environment
         builder = DiagramBuilder()

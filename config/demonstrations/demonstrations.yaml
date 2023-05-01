@@ -1,4 +1,0 @@
-n_demonstrations: 100
-workspace_radius: 10
-object_max_radius: 0.5
-robot_max_radius: 0.1

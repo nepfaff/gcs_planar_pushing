@@ -5,6 +5,7 @@ from pydrake.all import Rgba, RigidTransform, RotationMatrix
 class ProblemGenerator:
     def __init__(
         self,
+        n_samples: int,
         workspace_radius: float,
         object_max_radius: float,
         robot_max_radius: float,
@@ -13,6 +14,7 @@ class ProblemGenerator:
         object,
         robot,
     ):
+        self.n_samples = n_samples
         self.workspace_radius = workspace_radius
         self.object_max_radius = object_max_radius
         self.robot_max_radius = robot_max_radius
@@ -26,7 +28,7 @@ class ProblemGenerator:
             self.workspace_radius > self.object_max_radius + self.robot_max_radius
         ), "Workspace must be larger than the sum of the object and robot radii."
 
-    def generate_initial_positions(self, n_samples=100):
+    def generate_initial_positions(self):
 
         # Hardcoded robot and object dimensions:
         dim_robot = 2
@@ -42,11 +44,11 @@ class ProblemGenerator:
             [-rob_bound, rob_bound],  # y bounds
         ]
 
-        object_pos = np.zeros((n_samples, dim_object))
-        robot_pos = np.zeros((n_samples, dim_robot))
+        object_pos = np.zeros((self.n_samples, dim_object))
+        robot_pos = np.zeros((self.n_samples, dim_robot))
 
         count = 0
-        while count != n_samples:
+        while count != self.n_samples:
             for i in range(dim_object):
                 object_pos[count, i] = np.random.uniform(
                     object_bounds[i][0], object_bounds[i][1]
