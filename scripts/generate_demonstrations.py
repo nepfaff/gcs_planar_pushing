@@ -53,7 +53,7 @@ def main(cfg: OmegaConf):
     # print(f"Robot position: {robot_pos}")
 
     # # Override for testing: 1 trajectory
-    # object_pos, robot_pos = np.array([[-1.0, 0.0]]), np.array([[-5.0, 0.0]])
+    object_pos, robot_pos = np.array([[-1.0, 0.0]]), np.array([[-5.0, 0.0]])
 
     # # Override for testing: 3 trajectories
     # object_pos = np.array([[-1.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
