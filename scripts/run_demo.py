@@ -12,7 +12,7 @@ from gcs_planar_pushing.controllers import ControllerBase
 
 @hydra.main(
     version_base=None,
-    config_path=str(pathlib.Path(__file__).parent.joinpath("../..", "config")),
+    config_path=str(pathlib.Path(__file__).parent.joinpath("..", "config")),
 )
 def main(cfg: OmegaConf):
     controller: ControllerBase = instantiate(cfg.controller)

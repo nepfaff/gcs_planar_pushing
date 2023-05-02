@@ -176,7 +176,8 @@ class PlanarCubeGCSController(ControllerBase):
             dim=problem_dim,
             position_curve_order=bezier_curve_order,
             name="f",
-            geometry="point",
+            geometry="sphere",
+            radius=0.2,
             actuated=True,
         )
         box = RigidBody(
@@ -224,11 +225,17 @@ class PlanarCubeGCSController(ControllerBase):
                 PositionModeType.RIGHT,
                 PositionModeType.BOTTOM,
                 PositionModeType.BOTTOM_RIGHT,
+                PositionModeType.LEFT_TRANSITION,
+                PositionModeType.RIGHT_TRANSITION,
+                PositionModeType.TOP_TRANSITION,
+                PositionModeType.BOTTOM_TRANSITION,
             ],  # TODO: extend
             allowable_contact_mode_types=[
                 ContactModeType.NO_CONTACT,
                 ContactModeType.ROLLING,
             ],
+            transition_eps=0.5,
+            center_contact_buffer=0.0,
         )
         p2 = ObjectPair(
             box,
@@ -256,8 +263,10 @@ class PlanarCubeGCSController(ControllerBase):
         no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
         no_vertical_movement = [eq(z_f, box_depth), eq(z_b, box_depth)]
         additional_constraints = [*no_ground_motion, *no_vertical_movement]
+
         source_config = ContactModeConfig(
             modes={
+
                 p1.get_contact_pair_for_positions(
                     initial_finger_position, initial_box_position
                 ).name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
@@ -266,12 +275,15 @@ class PlanarCubeGCSController(ControllerBase):
                 ).name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
-                eq(x_f, initial_finger_position[0]),
-                eq(y_f, initial_finger_position[1]),
+                # eq(x_f, initial_finger_position[0]),
+                # eq(y_f, initial_finger_position[1]),
+                # eq(x_f, -0.5),
+                # eq(y_f, 0.0),
                 eq(x_b, initial_box_position[0]),
                 eq(y_b, initial_box_position[1]),
             ],
         )
+        # target_config = source_config
         target_config = ContactModeConfig(
             modes={
                 p2.get_contact_pair_for_positions(
