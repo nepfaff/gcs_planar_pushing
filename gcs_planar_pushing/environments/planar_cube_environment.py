@@ -83,7 +83,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         # Set up loggers Note: Not being used to generate data, just for debugging
         self._state_logger = LogVectorOutput(plant.get_state_output_port(), builder)
         self._action_logger = LogVectorOutput(
-            self._controller.sphere_controller.get_output_port_control(), builder
+            self._controller.desired_pos_source.get_output_port(), builder
         )
         # self._image_logger = AbstractValueLogger(rgbd_sensors[0].color_image_output_port(), builder)
 
@@ -197,10 +197,10 @@ class PlanarCubeEnvironment(EnvironmentBase):
             # plt.imshow(rgb_image)
             # plt.show()
 
-        # context = self._simulator.get_mutable_context()
-        # action_log = self._action_logger.FindLog(context)
-        # state_log = self._state_logger.FindLog(context)
-        # self._plot_logs(state_log, action_log)
+        context = self._simulator.get_mutable_context()
+        action_log = self._action_logger.FindLog(context)
+        state_log = self._state_logger.FindLog(context)
+        self._plot_logs(state_log, action_log)
 
         return image_data, state_data, action_data
 

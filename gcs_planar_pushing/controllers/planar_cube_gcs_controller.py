@@ -90,7 +90,6 @@ class PlanarCubeGCSController(ControllerBase):
             sphere_controller.get_output_port_control(),
             plant.get_actuation_input_port(sphere_model_instance),
         )
-        builder.ExportOutput(sphere_controller.get_output_port_control(), "action")
         return sphere_controller
 
     def _setup_open_loop_control(self, builder: DiagramBuilder) -> System:
@@ -100,7 +99,7 @@ class PlanarCubeGCSController(ControllerBase):
         )
         print(f"len(finger_position_path): {len(finger_position_path)}")
 
-        step_length_seconds = 0.05  # 0.01
+        step_length_seconds = 0.01  # 0.01
         finger_position_source = builder.AddSystem(
             PositionSource(
                 finger_position_path, step_length_seconds=step_length_seconds
@@ -109,6 +108,7 @@ class PlanarCubeGCSController(ControllerBase):
         self._sim_duration = step_length_seconds * len(finger_position_path)
         print(f"total time: {self._sim_duration}")
 
+        self.desired_pos_source = finger_position_source
         # Add discrete derivative to command velocities.
         desired_state_source = builder.AddSystem(
             StateInterpolatorWithDiscreteDerivative(
@@ -122,6 +122,7 @@ class PlanarCubeGCSController(ControllerBase):
             finger_position_source.get_output_port(),
             desired_state_source.get_input_port(),
         )
+        builder.ExportOutput(finger_position_source.get_output_port(), "action")
         return desired_state_source
 
     def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
@@ -136,8 +137,6 @@ class PlanarCubeGCSController(ControllerBase):
             finger_state_source.get_output_port(),
             sphere_controller.get_input_port_desired_state(),
         )
-
-        self.sphere_controller = sphere_controller
 
     def _plan_for_box_pushing_3d(
         self,
