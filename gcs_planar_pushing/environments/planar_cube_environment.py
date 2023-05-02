@@ -1,6 +1,6 @@
 import atexit
 import copy
-from typing import List
+from typing import List, Tuple
 from gcs_planar_pushing.images.image_generator import ImageGenerator
 import matplotlib.pyplot as plt
 from pydrake.all import (
@@ -14,6 +14,8 @@ from pydrake.all import (
     MeshcatVisualizerParams,
     Role,
     LogVectorOutput,
+    Rgba,
+    Box,
 )
 import numpy as np
 from gcs_planar_pushing.utils.util import AddRgbdSensors
@@ -121,6 +123,18 @@ class PlanarCubeEnvironment(EnvironmentBase):
             max_depth_range=10.0, diagram=diagram, scene_graph=scene_graph
         )
 
+        # Add target # Doing it like this doesn't show up on the camera for some reason
+        # self._draw_object("target", [0.0, 0.0])
+
+    def _draw_object(
+        self, name: str, x: np.array, color: Rgba = Rgba(0, 1, 0, 1.0)
+    ) -> None:
+
+        # Assumes x = [x, y]
+        pose = RigidTransform(RotationMatrix(), [*x, 0])
+        self._meshcat.SetObject(name, Box(1, 1, 0.3), rgba=color)
+        self._meshcat.SetTransform(name, pose)
+
     def simulate(self) -> None:
         print("Press 'Stop Simulation' in MeshCat to continue.")
 
@@ -138,12 +152,12 @@ class PlanarCubeEnvironment(EnvironmentBase):
         context = self._simulator.get_mutable_context()
         action_log = self._action_logger.FindLog(context)
         state_log = self._state_logger.FindLog(context)
-        self.plot_logs(state_log, action_log)
+        self._plot_logs(state_log, action_log)
 
-    def generate_data(self):
+    def generate_data(self, n_data: int) -> Tuple[np.array, np.array, np.array]:
         print(f"Meshcat URL: {self._meshcat.web_url()}")
         sim_duration = self._controller.get_sim_duration()
-        sample_times = np.linspace(0.0, sim_duration, 10)
+        sample_times = np.linspace(0.0, sim_duration, n_data)
         n_data = len(sample_times)
         image_data = np.zeros((n_data, 96, 96, 3))
         state_data = np.zeros((n_data, 2))
@@ -176,7 +190,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         return image_data, state_data, action_data
 
     # Not being used to generate data, only for debugging
-    def plot_logs(self, state_log, action_log) -> None:
+    def _plot_logs(self, state_log, action_log) -> None:
         fig, axs = plt.subplots(3, 1, figsize=(16, 16))
         axis = axs[0]
         axis.step(state_log.sample_times(), state_log.data().transpose()[:, :4])

@@ -12,7 +12,12 @@ directives:
     parent: world
     child: floor::floor
     X_PC:
-        translation: [0.0, 0.0, -0.5]
+        translation: [0.0, 0.0, 0]
+- add_weld:
+    parent: world
+    child: floor::box_target
+    X_PC:
+        translation: [0.0, 0.0, 0]
 - add_frame:
     name: camera0_origin
     X_PF:
