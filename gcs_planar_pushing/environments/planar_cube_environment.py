@@ -2,7 +2,6 @@ import atexit
 import copy
 from typing import List, Tuple
 from gcs_planar_pushing.images.image_generator import ImageGenerator
-import matplotlib.pyplot as plt
 from pydrake.all import (
     StartMeshcat,
     DiagramBuilder,
@@ -62,9 +61,14 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         rgbd_sensors = AddRgbdSensors(builder, plant, scene_graph)
 
+        assert (
+            len(rgbd_sensors) == 1
+        ), f"Expected a single camera but got {len(rgbd_sensors)}"
+        rgbd_sensor = rgbd_sensors[0]
+
         # Setup controller
         self._controller.add_meshcat(self._meshcat)
-        self._controller.setup(builder, plant)
+        self._controller.setup(builder, plant, rgbd_sensor=rgbd_sensor)
 
         visualizer_params = MeshcatVisualizerParams()
         visualizer_params.role = Role.kIllustration
@@ -142,7 +146,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         print(f"Meshcat URL: {self._meshcat.web_url()}")
 
-        sim_duration = self._controller.get_sim_duration()
+        sim_duration = 5.0
         for t in np.arange(0.0, sim_duration, self._time_step):
             self._simulator.AdvanceTo(t)
 

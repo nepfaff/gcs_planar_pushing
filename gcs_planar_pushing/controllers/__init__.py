@@ -1,3 +1,4 @@
 from .planar_cube_gcs_controller import PlanarCubeGCSController
 from .planar_cube_teleop_controller import PlanarCubeTeleopController
 from .controller_base import ControllerBase
+from .diffusion_policy_controller import DiffusionPolicyController

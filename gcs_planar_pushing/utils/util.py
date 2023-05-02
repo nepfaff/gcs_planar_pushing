@@ -1,13 +1,8 @@
 import os
-
-from pydrake.all import MultibodyPlant, Parser
-from manipulation.utils import AddPackagePaths
-
-import os
 import sys
-import warnings
+from typing import List
 
-import numpy as np
+from manipulation.utils import AddPackagePaths
 from pydrake.all import (
     AbstractValue,
     BaseField,
@@ -25,6 +20,8 @@ from pydrake.all import (
     RenderEngineVtkParams,
     RgbdSensor,
     RigidTransform,
+    MultibodyPlant,
+    Parser,
 )
 
 
@@ -44,7 +41,7 @@ def AddRgbdSensors(
     model_instance_prefix="camera",
     depth_camera=None,
     renderer=None,
-):
+) -> List[RgbdSensor]:
     """
     Adds a RgbdSensor to the first body in the plant for every model instance
     with a name starting with model_instance_prefix.  If depth_camera is None,
@@ -76,6 +73,7 @@ def AddRgbdSensors(
                     focal_y=900,
                     center_x=47.5,
                     center_y=47.5,
+
                 ),
                 ClippingRange(near=0.1, far=150.0),
                 RigidTransform(),
@@ -83,6 +81,7 @@ def AddRgbdSensors(
             DepthRange(0.1, 10.0),
         )
 
+    rgbd_sensors = []
     for index in range(plant.num_model_instances()):
         model_instance_index = ModelInstanceIndex(index)
         model_name = plant.GetModelInstanceName(model_instance_index)
@@ -99,6 +98,7 @@ def AddRgbdSensors(
             )
             rgbd_sensors.append(rgbd)
             rgbd.set_name(model_name)
+            rgbd_sensors.append(rgbd)
 
             builder.Connect(
                 scene_graph.get_query_output_port(),

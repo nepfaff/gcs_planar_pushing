@@ -121,7 +121,7 @@ class PlanarCubeGCSController(ControllerBase):
         )
         return desired_state_source
 
-    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
         if self._meshcat is None:
             raise RuntimeError(
                 "Need to call `add_meshcat` before calling `setup` of the teleop controller."
