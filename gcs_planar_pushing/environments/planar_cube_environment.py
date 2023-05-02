@@ -81,9 +81,9 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         # Set up loggers Note: Not being used to generate data, just for debugging
         self._state_logger = LogVectorOutput(plant.get_state_output_port(), builder)
-        self._action_logger = LogVectorOutput(
-            self._controller.sphere_controller.get_output_port_control(), builder
-        )
+        # self._action_logger = LogVectorOutput(
+        #     self._controller.sphere_controller.get_output_port_control(), builder
+        # )
         # self._image_logger = AbstractValueLogger(rgbd_sensors[0].color_image_output_port(), builder)
 
         diagram = builder.Build()
