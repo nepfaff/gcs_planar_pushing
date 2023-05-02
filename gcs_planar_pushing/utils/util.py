@@ -49,6 +49,7 @@ def AddRgbdSensors(
     assume the name 'my_renderer', and create a VTK renderer if a renderer of
     that name doesn't exist.
     """
+    rgbd_sensors = []
     if sys.platform == "linux" and os.getenv("DISPLAY") is None:
         from pyvirtualdisplay import Display
 
@@ -66,12 +67,13 @@ def AddRgbdSensors(
             RenderCameraCore(
                 renderer,
                 CameraInfo(
-                    width=480,
-                    height=480,
-                    focal_x=10000,
-                    focal_y=10000,
-                    center_x=239.5,
-                    center_y=239.5,
+                    width=96,
+                    height=96,
+                    focal_x=900,
+                    focal_y=900,
+                    center_x=47.5,
+                    center_y=47.5,
+
                 ),
                 ClippingRange(near=0.1, far=150.0),
                 RigidTransform(),
@@ -94,6 +96,7 @@ def AddRgbdSensors(
                     show_window=False,
                 )
             )
+            rgbd_sensors.append(rgbd)
             rgbd.set_name(model_name)
             rgbd_sensors.append(rgbd)
 

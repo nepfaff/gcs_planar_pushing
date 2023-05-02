@@ -1,0 +1,10 @@
+defaults:
+  - controller: gcs_open_loop
+  - environment: box_no_rotations
+  - problem_generator: problem_generator
+
+problem_generator:
+  n_samples: 3
+
+chunk_length: -1
+n_data_per_episode: 100
