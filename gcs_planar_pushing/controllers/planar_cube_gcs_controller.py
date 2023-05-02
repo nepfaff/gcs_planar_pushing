@@ -98,13 +98,16 @@ class PlanarCubeGCSController(ControllerBase):
             initial_box_position=self._initial_box_position,
             initial_finger_position=self._initial_finger_position,
         )
-        step_length_seconds = 0.01
+        print(f"len(finger_position_path): {len(finger_position_path)}")
+
+        step_length_seconds = 0.05  # 0.01
         finger_position_source = builder.AddSystem(
             PositionSource(
                 finger_position_path, step_length_seconds=step_length_seconds
             )
         )
         self._sim_duration = step_length_seconds * len(finger_position_path)
+        print(f"total time: {self._sim_duration}")
 
         # Add discrete derivative to command velocities.
         desired_state_source = builder.AddSystem(
@@ -242,11 +245,6 @@ class PlanarCubeGCSController(ControllerBase):
             ],
         )
         object_pairs = [p1, p2]
-        # contact_pairs_nested = [
-        #     object_pair.contact_pairs for object_pair in object_pairs
-        # ]
-        # contact_pairs = reduce(lambda a, b: a + b, contact_pairs_nested)
-        # print([pair.name for pair in contact_pairs])
 
         # Specify problem
         ground_position = [0, 0, -floor_depth]

@@ -76,7 +76,7 @@ def main(cfg: OmegaConf):
         )
         environment.setup(meshcat)
         image_data, state_data, action_data = environment.generate_data(
-            cfg.n_data_per_episode
+            cfg.log_every_k_sim_timesteps
         )
         # Add data to ReplayBuffer
         episode = {
