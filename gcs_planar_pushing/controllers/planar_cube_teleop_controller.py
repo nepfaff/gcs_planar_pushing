@@ -62,6 +62,8 @@ class PlanarCubeTeleopController(ControllerBase):
         return sphere_controller
 
     def _setup_sphere_teleop(self, builder: DiagramBuilder) -> System:
+        self._sim_duration = 5.0
+
         input_limit = self._teleop_config.input_limit
         step = self._teleop_config.step_size
         sphere_starting_translation = self._teleop_config.start_translation
@@ -94,9 +96,12 @@ class PlanarCubeTeleopController(ControllerBase):
         )
         desired_state_source.set_name("teleop_desired_state_source")
         builder.Connect(mux.get_output_port(), desired_state_source.get_input_port())
+
+        self.desired_pos_source = mux
+
         return desired_state_source
 
-    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
         if self._meshcat is None:
             raise RuntimeError(
                 "Need to call `add_meshcat` before calling `setup` of the teleop controller."

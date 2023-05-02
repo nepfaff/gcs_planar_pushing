@@ -97,14 +97,18 @@ class PlanarCubeGCSController(ControllerBase):
             initial_box_position=self._initial_box_position,
             initial_finger_position=self._initial_finger_position,
         )
-        step_length_seconds = 0.01
+        print(f"len(finger_position_path): {len(finger_position_path)}")
+
+        step_length_seconds = 0.05  # 0.01
         finger_position_source = builder.AddSystem(
             PositionSource(
                 finger_position_path, step_length_seconds=step_length_seconds
             )
         )
         self._sim_duration = step_length_seconds * len(finger_position_path)
+        print(f"total time: {self._sim_duration}")
 
+        self.desired_pos_source = finger_position_source
         # Add discrete derivative to command velocities.
         desired_state_source = builder.AddSystem(
             StateInterpolatorWithDiscreteDerivative(
@@ -118,9 +122,10 @@ class PlanarCubeGCSController(ControllerBase):
             finger_position_source.get_output_port(),
             desired_state_source.get_input_port(),
         )
+        builder.ExportOutput(finger_position_source.get_output_port(), "action")
         return desired_state_source
 
-    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
         if self._meshcat is None:
             raise RuntimeError(
                 "Need to call `add_meshcat` before calling `setup` of the teleop controller."
@@ -162,6 +167,10 @@ class PlanarCubeGCSController(ControllerBase):
         floor_height = 20
         floor_depth = 1
         friction_coeff = 0.5
+
+        # Add in z = 0
+        initial_finger_position = [*initial_finger_position, 0]
+        initial_box_position = [*initial_box_position, box_depth]
 
         finger = RigidBody(
             dim=problem_dim,
@@ -242,25 +251,28 @@ class PlanarCubeGCSController(ControllerBase):
             ],
         )
         object_pairs = [p1, p2]
-        contact_pairs_nested = [
-            object_pair.contact_pairs for object_pair in object_pairs
-        ]
-        contact_pairs = reduce(lambda a, b: a + b, contact_pairs_nested)
-        print([pair.name for pair in contact_pairs])
 
         # Specify problem
+        ground_position = [0, 0, -floor_depth]
+        print(
+            f"initial contact_pair of finger,box: {p1.get_contact_pair_for_positions(initial_finger_position, initial_box_position).name}"
+        )
+        print(
+            f"initial contact_pair of box,ground: {p2.get_contact_pair_for_positions(initial_box_position, ground_position).name}"
+        )
         no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
         no_vertical_movement = [eq(z_f, box_depth), eq(z_b, box_depth)]
         additional_constraints = [*no_ground_motion, *no_vertical_movement]
 
         source_config = ContactModeConfig(
             modes={
-                contact_pairs[
-                    0
-                ].name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
-                contact_pairs[
-                    -1
-                ].name: ContactModeType.ROLLING,  # Box in contact with floor
+
+                p1.get_contact_pair_for_positions(
+                    initial_finger_position, initial_box_position
+                ).name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
+                p2.get_contact_pair_for_positions(
+                    initial_box_position, ground_position
+                ).name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
                 # eq(x_f, initial_finger_position[0]),
@@ -274,8 +286,9 @@ class PlanarCubeGCSController(ControllerBase):
         # target_config = source_config
         target_config = ContactModeConfig(
             modes={
-                contact_pairs[5].name: ContactModeType.NO_CONTACT,
-                contact_pairs[-1].name: ContactModeType.ROLLING,
+                p2.get_contact_pair_for_positions(
+                    initial_box_position, ground_position
+                ).name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
                 eq(x_b, 0.0),
@@ -310,6 +323,7 @@ class PlanarCubeGCSController(ControllerBase):
         planner.add_force_path_length_cost()
         planner.add_num_visited_vertices_cost(100)
         planner.add_force_strength_cost()
+        # planner.add_position_path_time_cost(target_position = [0,0]) # This doesn't work
 
         result = planner.solve(use_convex_relaxation=False)
         ctrl_points = planner.get_ctrl_points(result)
@@ -319,10 +333,23 @@ class PlanarCubeGCSController(ControllerBase):
             friction_force_curves,
         ) = planner.get_curves_from_ctrl_points(ctrl_points)
 
+        # Filter out sections without movement
+        filtered_pos = PlanarCubeGCSController._filter_desired_pos(
+            pos_curves["f"][:, :2]
+        )
+
         if visualize:
             plot_positions_and_forces(
                 pos_curves, normal_force_curves, friction_force_curves
             )
             animate_positions(pos_curves, rigid_bodies)
 
-        return pos_curves["f"][:, :2]
+        return filtered_pos
+
+    @staticmethod
+    def _filter_desired_pos(pos_curve):
+        diff = np.diff(pos_curve, axis=0)
+        dist = np.linalg.norm(diff, axis=1)
+        mask = np.concatenate(([True], dist > 0.01))
+        filtered_pos = pos_curve[mask]
+        return filtered_pos

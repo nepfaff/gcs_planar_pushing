@@ -1,13 +1,8 @@
 import os
-
-from pydrake.all import MultibodyPlant, Parser
-from manipulation.utils import AddPackagePaths
-
-import os
 import sys
-import warnings
+from typing import List
 
-import numpy as np
+from manipulation.utils import AddPackagePaths
 from pydrake.all import (
     AbstractValue,
     BaseField,
@@ -25,6 +20,8 @@ from pydrake.all import (
     RenderEngineVtkParams,
     RgbdSensor,
     RigidTransform,
+    MultibodyPlant,
+    Parser,
 )
 
 
@@ -35,6 +32,7 @@ def get_parser(plant: MultibodyPlant) -> Parser:
     parser.package_map().AddPackageXml(os.path.abspath("package.xml"))
     return parser
 
+
 def AddRgbdSensors(
     builder,
     plant,
@@ -43,7 +41,7 @@ def AddRgbdSensors(
     model_instance_prefix="camera",
     depth_camera=None,
     renderer=None,
-):
+) -> List[RgbdSensor]:
     """
     Adds a RgbdSensor to the first body in the plant for every model instance
     with a name starting with model_instance_prefix.  If depth_camera is None,
@@ -51,6 +49,7 @@ def AddRgbdSensors(
     assume the name 'my_renderer', and create a VTK renderer if a renderer of
     that name doesn't exist.
     """
+    rgbd_sensors = []
     if sys.platform == "linux" and os.getenv("DISPLAY") is None:
         from pyvirtualdisplay import Display
 
@@ -61,27 +60,27 @@ def AddRgbdSensors(
         renderer = "my_renderer"
 
     if not scene_graph.HasRenderer(renderer):
-        scene_graph.AddRenderer(
-            renderer, MakeRenderEngineVtk(RenderEngineVtkParams())
-        )
+        scene_graph.AddRenderer(renderer, MakeRenderEngineVtk(RenderEngineVtkParams()))
 
     if not depth_camera:
         depth_camera = DepthRenderCamera(
             RenderCameraCore(
                 renderer,
-                CameraInfo(width=480,
-                           height=480,
-                           focal_x=10000,
-                           focal_y=10000,
-                           center_x=239.5,
-                           center_y=239.5),
+                CameraInfo(
+                    width=96,
+                    height=96,
+                    focal_x=900,
+                    focal_y=900,
+                    center_x=47.5,
+                    center_y=47.5,
+                ),
                 ClippingRange(near=0.1, far=150.0),
                 RigidTransform(),
             ),
             DepthRange(0.1, 10.0),
         )
-        
 
+    rgbd_sensors = []
     for index in range(plant.num_model_instances()):
         model_instance_index = ModelInstanceIndex(index)
         model_name = plant.GetModelInstanceName(model_instance_index)
@@ -97,6 +96,7 @@ def AddRgbdSensors(
                 )
             )
             rgbd.set_name(model_name)
+            rgbd_sensors.append(rgbd)
 
             builder.Connect(
                 scene_graph.get_query_output_port(),
@@ -167,3 +167,4 @@ def AddRgbdSensors(
                     to_point_cloud.point_cloud_output_port(),
                     f"{model_name}_point_cloud",
                 )
+    return rgbd_sensors

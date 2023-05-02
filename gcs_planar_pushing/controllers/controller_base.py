@@ -19,7 +19,7 @@ class ControllerBase(ABC):
         return self._sim_duration
 
     @abstractmethod
-    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant) -> None:
+    def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
         """Setup the controller."""
         raise NotImplementedError
 
