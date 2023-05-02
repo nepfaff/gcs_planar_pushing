@@ -225,8 +225,8 @@ class PlanarCubeGCSController(ControllerBase):
                 ContactModeType.NO_CONTACT,
                 ContactModeType.ROLLING,
             ],
-            transition_eps=0.1,
-            center_contact_buffer=0.05,
+            transition_eps=0.5,
+            center_contact_buffer=0.0,
         )
         p2 = ObjectPair(
             box,
@@ -252,25 +252,29 @@ class PlanarCubeGCSController(ControllerBase):
         no_ground_motion = [eq(x_g, 0), eq(y_g, 0), eq(z_g, -floor_depth)]
         no_vertical_movement = [eq(z_f, box_depth), eq(z_b, box_depth)]
         additional_constraints = [*no_ground_motion, *no_vertical_movement]
+
         source_config = ContactModeConfig(
             modes={
                 contact_pairs[
-                    1
+                    0
                 ].name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
                 contact_pairs[
                     -1
                 ].name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
-                eq(x_f, initial_finger_position[0]),
-                eq(y_f, initial_finger_position[1]),
+                # eq(x_f, initial_finger_position[0]),
+                # eq(y_f, initial_finger_position[1]),
+                # eq(x_f, -0.5),
+                # eq(y_f, 0.0),
                 eq(x_b, initial_box_position[0]),
                 eq(y_b, initial_box_position[1]),
             ],
         )
+        # target_config = source_config
         target_config = ContactModeConfig(
             modes={
-                contact_pairs[5].name: ContactModeType.ROLLING,
+                contact_pairs[5].name: ContactModeType.NO_CONTACT,
                 contact_pairs[-1].name: ContactModeType.ROLLING,
             },
             additional_constraints=[

@@ -11,7 +11,7 @@ from gcs_planar_pushing.environments import EnvironmentBase
 
 @hydra.main(
     version_base=None,
-    config_path=str(pathlib.Path(__file__).parent.joinpath("../..", "config")),
+    config_path=str(pathlib.Path(__file__).parent.joinpath("..", "config")),
 )
 def main(cfg: OmegaConf):
     environment: EnvironmentBase = instantiate(cfg.environment)
