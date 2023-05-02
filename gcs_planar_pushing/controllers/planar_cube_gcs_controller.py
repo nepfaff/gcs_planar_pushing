@@ -168,7 +168,7 @@ class PlanarCubeGCSController(ControllerBase):
             position_curve_order=bezier_curve_order,
             name="f",
             geometry="sphere",
-            radius="0.2"
+            radius=0.2,
             actuated=True,
         )
         box = RigidBody(
@@ -226,7 +226,7 @@ class PlanarCubeGCSController(ControllerBase):
                 ContactModeType.ROLLING,
             ],
             transition_eps=0.1,
-            center_contact_buffer=0.05
+            center_contact_buffer=0.05,
         )
         p2 = ObjectPair(
             box,
