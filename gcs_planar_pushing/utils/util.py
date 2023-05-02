@@ -73,7 +73,6 @@ def AddRgbdSensors(
                     focal_y=900,
                     center_x=47.5,
                     center_y=47.5,
-
                 ),
                 ClippingRange(near=0.1, far=150.0),
                 RigidTransform(),
@@ -96,7 +95,6 @@ def AddRgbdSensors(
                     show_window=False,
                 )
             )
-            rgbd_sensors.append(rgbd)
             rgbd.set_name(model_name)
             rgbd_sensors.append(rgbd)
 

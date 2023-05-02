@@ -7,4 +7,4 @@ problem_generator:
   n_samples: 3
 
 chunk_length: -1
-n_data_per_episode: 100
+log_every_k_sim_timesteps: 1000

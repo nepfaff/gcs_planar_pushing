@@ -17,6 +17,7 @@ from pydrake.all import (
     Box,
 )
 import numpy as np
+import matplotlib.pyplot as plt
 from gcs_planar_pushing.utils.util import AddRgbdSensors
 
 from .environment_base import EnvironmentBase
@@ -158,10 +159,15 @@ class PlanarCubeEnvironment(EnvironmentBase):
         state_log = self._state_logger.FindLog(context)
         self._plot_logs(state_log, action_log)
 
-    def generate_data(self, n_data: int) -> Tuple[np.array, np.array, np.array]:
+    def generate_data(
+        self, log_every_k_sim_timesteps: int
+    ) -> Tuple[np.array, np.array, np.array]:
         print(f"Meshcat URL: {self._meshcat.web_url()}")
         sim_duration = self._controller.get_sim_duration()
-        sample_times = np.linspace(0.0, sim_duration, n_data)
+        sample_times = np.arange(
+            0.0, sim_duration, self._time_step * log_every_k_sim_timesteps
+        )
+
         n_data = len(sample_times)
         image_data = np.zeros((n_data, 96, 96, 3))
         state_data = np.zeros((n_data, 2))
@@ -186,10 +192,15 @@ class PlanarCubeEnvironment(EnvironmentBase):
                 self._diagram.GetOutputPort("action").Eval(context)
             )
 
-            # print(f"state: {state_data[i]}")
-            # print(f"action: {action_data[i]}")
+            print(f"state: {state_data[i]}")
+            print(f"action: {action_data[i]}")
             # plt.imshow(rgb_image)
             # plt.show()
+
+        # context = self._simulator.get_mutable_context()
+        # action_log = self._action_logger.FindLog(context)
+        # state_log = self._state_logger.FindLog(context)
+        # self._plot_logs(state_log, action_log)
 
         return image_data, state_data, action_data
 
