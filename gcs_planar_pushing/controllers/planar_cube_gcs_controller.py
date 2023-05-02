@@ -99,7 +99,7 @@ class PlanarCubeGCSController(ControllerBase):
         )
         print(f"len(finger_position_path): {len(finger_position_path)}")
 
-        step_length_seconds = 0.01  # 0.01
+        step_length_seconds = 0.05  # 0.01
         finger_position_source = builder.AddSystem(
             PositionSource(
                 finger_position_path, step_length_seconds=step_length_seconds
@@ -311,6 +311,7 @@ class PlanarCubeGCSController(ControllerBase):
         planner.add_force_path_length_cost()
         planner.add_num_visited_vertices_cost(100)
         planner.add_force_strength_cost()
+        # planner.add_position_path_time_cost(target_position = [0,0]) # This doesn't work
 
         result = planner.solve(use_convex_relaxation=False)
         ctrl_points = planner.get_ctrl_points(result)
@@ -320,10 +321,23 @@ class PlanarCubeGCSController(ControllerBase):
             friction_force_curves,
         ) = planner.get_curves_from_ctrl_points(ctrl_points)
 
+        # Filter out sections without movement
+        filtered_pos = PlanarCubeGCSController._filter_desired_pos(
+            pos_curves["f"][:, :2]
+        )
+
         if visualize:
             plot_positions_and_forces(
                 pos_curves, normal_force_curves, friction_force_curves
             )
             animate_positions(pos_curves, rigid_bodies)
 
-        return pos_curves["f"][:, :2]
+        return filtered_pos
+
+    @staticmethod
+    def _filter_desired_pos(pos_curve):
+        diff = np.diff(pos_curve, axis=0)
+        dist = np.linalg.norm(diff, axis=1)
+        mask = np.concatenate(([True], dist > 0.01))
+        filtered_pos = pos_curve[mask]
+        return filtered_pos
