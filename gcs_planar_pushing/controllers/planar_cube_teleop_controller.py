@@ -96,6 +96,9 @@ class PlanarCubeTeleopController(ControllerBase):
         )
         desired_state_source.set_name("teleop_desired_state_source")
         builder.Connect(mux.get_output_port(), desired_state_source.get_input_port())
+
+        self.desired_pos_source = mux
+
         return desired_state_source
 
     def setup(self, builder: DiagramBuilder, plant: MultibodyPlant, **kwargs) -> None:
@@ -110,5 +113,3 @@ class PlanarCubeTeleopController(ControllerBase):
             teleop_state_source.get_output_port(),
             sphere_controller.get_input_port_desired_state(),
         )
-
-        self.sphere_controller = sphere_controller
