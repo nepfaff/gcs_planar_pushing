@@ -92,10 +92,12 @@ def main(cfg: OmegaConf):
                 meshcat,
             )
 
-    buffer.save_to_path(
-        os.path.join(full_log_dir, f"replay_{date_time}.zarr"),
-        chunk_length=cfg.chunk_length,
-    )
+        # Save after every episode
+        buffer.save_to_path(
+            os.path.join(full_log_dir, f"replay_{date_time}.zarr"),
+            chunk_length=cfg.chunk_length,
+        )
+        print(f"Completed episode {i} of {len(object_pos)}")
 
 
 if __name__ == "__main__":
