@@ -223,7 +223,7 @@ class DiffusionPolicyController(ControllerBase):
 
     def _setup_diffusion_policy_controller(
         self, builder: DiagramBuilder, plant: MultibodyPlant, rgbd_sensor: RgbdSensor
-    ) -> Tuple[System, System]:
+    ) -> System:
         # TODO: Make these arguments
         finger_position_source = builder.AddSystem(
             DiffusionPolicy(
