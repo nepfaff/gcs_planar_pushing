@@ -20,9 +20,20 @@ from pydrake.all import (
     RenderEngineVtkParams,
     RgbdSensor,
     RigidTransform,
-    MultibodyPlant,
-    Parser,
 )
+
+
+def save_meshcat(path: str, meshcat) -> None:
+    """Save the visualization."""
+    parent_dir = os.path.dirname(path)
+
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+
+    html = meshcat.StaticHtml()
+    output_file = open(path + ".html", "w")
+    output_file.write(html)
+    output_file.close()
 
 
 def get_parser(plant: MultibodyPlant) -> Parser:

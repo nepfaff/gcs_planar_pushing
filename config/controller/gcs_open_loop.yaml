@@ -4,3 +4,9 @@ sphere_pid_gains:
   kp: 100
   kd: 20
   ki: 1
+zero_order_hold_duration: 0.1
+movement_filter_eps: 0.0001
+center_contact_buffer: 0.0
+transition_eps: 0.5
+use_convex_relaxation: False
+visualize_gcs_plan: False

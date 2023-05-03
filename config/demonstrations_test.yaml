@@ -8,3 +8,4 @@ problem_generator:
 
 chunk_length: -1
 log_every_k_sim_timesteps: 1000
+save_meshcats: True
