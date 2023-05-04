@@ -133,11 +133,7 @@ class DiffusionPolicy(LeafSystem):
             : len(self._desired_pos)
         ]
 
-        # print(robot_pos_actual, self._desired_pos)
-        # output.SetFromVector([-4.5,0.])
-        # return
-
-        if not np.allclose(self._desired_pos, robot_pos_actual, atol=0.01):
+        if not np.allclose(self._desired_pos, robot_pos_actual, atol=0.005):
             # Demand the desired pose until we reach it
             output.SetFromVector(self._desired_pos)
             return

@@ -152,7 +152,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         # sim_duration = 5.0
         # for t in np.arange(0.0, sim_duration, self._time_step):
         #     self._simulator.AdvanceTo(t)
-        self._simulator.AdvanceTo(500.0)
+        self._simulator.AdvanceTo(1000.0)
 
         self._visualizer.StopRecording()
         self._visualizer.PublishRecording()

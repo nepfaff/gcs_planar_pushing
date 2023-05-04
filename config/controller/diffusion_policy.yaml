@@ -1,6 +1,6 @@
 _target_: gcs_planar_pushing.controllers.diffusion_policy_controller.DiffusionPolicyController
 time_step: 1e-3
 sphere_pid_gains:
-  kp: 5
-  kd: 1
-  ki: 0.1
+  kp: 100
+  kd: 10
+  ki: 1
