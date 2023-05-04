@@ -82,9 +82,9 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         # Set up loggers Note: Not being used to generate data, just for debugging
         self._state_logger = LogVectorOutput(plant.get_state_output_port(), builder)
-        self._action_logger = LogVectorOutput(
-            self._controller.desired_pos_source.get_output_port(), builder
-        )
+        # self._action_logger = LogVectorOutput(
+        #     self._controller.desired_pos_source.get_output_port(), builder
+        # )
         # self._image_logger = AbstractValueLogger(rgbd_sensors[0].color_image_output_port(), builder)
 
         diagram = builder.Build()
@@ -147,17 +147,18 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         print(f"Meshcat URL: {self._meshcat.web_url()}")
 
-        sim_duration = 5.0
-        for t in np.arange(0.0, sim_duration, self._time_step):
-            self._simulator.AdvanceTo(t)
+        # sim_duration = 5.0
+        # for t in np.arange(0.0, sim_duration, self._time_step):
+        #     self._simulator.AdvanceTo(t)
+        self._simulator.AdvanceTo(500.0)
 
         self._visualizer.StopRecording()
         self._visualizer.PublishRecording()
 
         context = self._simulator.get_mutable_context()
-        action_log = self._action_logger.FindLog(context)
+        # action_log = self._action_logger.FindLog(context)
         state_log = self._state_logger.FindLog(context)
-        self._plot_logs(state_log, action_log)
+        # self._plot_logs(state_log, action_log)
 
     def generate_data(
         self, log_every_k_sim_timesteps: int

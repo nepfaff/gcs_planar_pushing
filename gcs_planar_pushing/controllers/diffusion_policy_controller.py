@@ -48,10 +48,8 @@ class DiffusionPolicy(LeafSystem):
 
         # TODO: Make these arguments
         self._pred_horizon = 16
-        self._obs_horizon = 2
+        self._obs_horizon = 1  # Current implementation does only works for horizon = 1
         self._action_horizon = 8
-        self._pose_observation_cache = deque([], maxlen=self._obs_horizon)
-        self._image_observation_cache = deque([], maxlen=self._obs_horizon)
         self._action_cache = deque([], maxlen=self._action_horizon)
 
         # Get dataset specific normalizer
@@ -134,31 +132,29 @@ class DiffusionPolicy(LeafSystem):
         robot_pos_actual = self._robot_state_actual_port.Eval(context)[
             : len(self._desired_pos)
         ]
-        image_obs_current = self._image_obs_current_port.Eval(context).data
-        # Discard alpha channel
-        image_obs_current = image_obs_current[:, :, :3]
-        # Convert pixels from int to float
-        image_obs_current = skimage.img_as_float32(image_obs_current)
-        # Move color chanel to front
-        image_obs_current = np.transpose(image_obs_current, (2, 0, 1))
 
-        self._pose_observation_cache.append(robot_pos_actual)
-        self._image_observation_cache.append(image_obs_current)
+        # print(robot_pos_actual, self._desired_pos)
+        # output.SetFromVector([-4.5,0.])
+        # return
 
-        if len(self._pose_observation_cache) < self._obs_horizon:
-            # Only start when the observation cache is full
-            output.SetFromVector(self._desired_pos)
-            return
-
-        if not np.allclose(self._desired_pos, robot_pos_actual):
+        if not np.allclose(self._desired_pos, robot_pos_actual, atol=0.01):
             # Demand the desired pose until we reach it
             output.SetFromVector(self._desired_pos)
             return
 
         if len(self._action_cache) == 0:  # Compute new actions
+            image_obs_current = self._image_obs_current_port.Eval(context).data
+            # Discard alpha channel
+            image_obs_current = image_obs_current[:, :, :3]
+            # Convert pixels from int to float
+            image_obs_current = skimage.img_as_float32(image_obs_current)
+            # Move color chanel to front
+            image_obs_current = np.transpose(image_obs_current, (2, 0, 1))
+
+            # Using observation horizon of one, so no need to keep a cache
             obs_dict_np = {
-                "agent_pos": np.asarray(self._pose_observation_cache)[np.newaxis, :],
-                "image": np.asarray(self._image_observation_cache)[np.newaxis, :],
+                "agent_pos": robot_pos_actual[np.newaxis, np.newaxis, :],
+                "image": image_obs_current[np.newaxis, np.newaxis, :],
             }
             obs_dict = dict_apply(obs_dict_np, lambda x: torch.from_numpy(x))
 
@@ -228,9 +224,8 @@ class DiffusionPolicyController(ControllerBase):
         finger_position_source = builder.AddSystem(
             DiffusionPolicy(
                 initial_pos=self._initial_finger_position,
-                checkpoint_path="../diffusion_policy/data/outputs/2023.04.30/15.17.37_train_"
-                + "diffusion_unet_hybrid_planar_cube_image/checkpoints/latest.ckpt",
-                dataset_path="../diffusion_policy/data/pusht/pusht_cchi_v7_replay.zarr",
+                dataset_path="../diffusion_policy/data/replay_2023-05-03_00-07-29.zarr",
+                checkpoint_path="../diffusion_policy/data/latest.ckpt",
             )
         )
 
