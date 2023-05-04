@@ -54,9 +54,20 @@ class PlanarCubeGCSController(ControllerBase):
         self,
         time_step: float,
         sphere_pid_gains: Dict[str, float],
+        zero_order_hold_duration: float,
+        movement_filter_eps: float,
+        center_contact_buffer: float,
+        transition_eps: float,
+        use_convex_relaxation: bool,
+        visualize_gcs_plan: bool,
     ):
         super().__init__(time_step)
-
+        self._visualize_gcs_plan = visualize_gcs_plan
+        self._use_convex_relaxation = use_convex_relaxation
+        self._transition_eps = transition_eps
+        self._center_contact_buffer = center_contact_buffer
+        self._movement_filter_eps = movement_filter_eps
+        self._zero_order_hold_duration = zero_order_hold_duration
         self._sphere_pid_gains = sphere_pid_gains
         self._num_sphere_positions = 2
 
@@ -96,16 +107,17 @@ class PlanarCubeGCSController(ControllerBase):
         finger_position_path = self._plan_for_box_pushing_3d(
             initial_box_position=self._initial_box_position,
             initial_finger_position=self._initial_finger_position,
+            visualize=self._visualize_gcs_plan,
         )
         print(f"len(finger_position_path): {len(finger_position_path)}")
 
-        step_length_seconds = 0.05  # 0.01
+        step_length_seconds = self._zero_order_hold_duration
         finger_position_source = builder.AddSystem(
             PositionSource(
                 finger_position_path, step_length_seconds=step_length_seconds
             )
         )
-        self._sim_duration = step_length_seconds * len(finger_position_path)
+        self._sim_duration = step_length_seconds * (len(finger_position_path) + 20)
         print(f"total time: {self._sim_duration}")
 
         self.desired_pos_source = finger_position_source
@@ -177,7 +189,7 @@ class PlanarCubeGCSController(ControllerBase):
             position_curve_order=bezier_curve_order,
             name="f",
             geometry="sphere",
-            radius=0.2,
+            radius=0.3,
             actuated=True,
         )
         box = RigidBody(
@@ -234,8 +246,8 @@ class PlanarCubeGCSController(ControllerBase):
                 ContactModeType.NO_CONTACT,
                 ContactModeType.ROLLING,
             ],
-            transition_eps=0.5,
-            center_contact_buffer=0.0,
+            transition_eps=self._transition_eps,
+            center_contact_buffer=self._center_contact_buffer,
         )
         p2 = ObjectPair(
             box,
@@ -266,7 +278,6 @@ class PlanarCubeGCSController(ControllerBase):
 
         source_config = ContactModeConfig(
             modes={
-
                 p1.get_contact_pair_for_positions(
                     initial_finger_position, initial_box_position
                 ).name: ContactModeType.NO_CONTACT,  # Finger not in contact with box
@@ -275,10 +286,8 @@ class PlanarCubeGCSController(ControllerBase):
                 ).name: ContactModeType.ROLLING,  # Box in contact with floor
             },
             additional_constraints=[
-                # eq(x_f, initial_finger_position[0]),
-                # eq(y_f, initial_finger_position[1]),
-                # eq(x_f, -0.5),
-                # eq(y_f, 0.0),
+                eq(x_f, initial_finger_position[0]),
+                eq(y_f, initial_finger_position[1]),
                 eq(x_b, initial_box_position[0]),
                 eq(y_b, initial_box_position[1]),
             ],
@@ -325,7 +334,7 @@ class PlanarCubeGCSController(ControllerBase):
         planner.add_force_strength_cost()
         # planner.add_position_path_time_cost(target_position = [0,0]) # This doesn't work
 
-        result = planner.solve(use_convex_relaxation=False)
+        result = planner.solve(use_convex_relaxation=self._use_convex_relaxation)
         ctrl_points = planner.get_ctrl_points(result)
         (
             pos_curves,
@@ -334,9 +343,7 @@ class PlanarCubeGCSController(ControllerBase):
         ) = planner.get_curves_from_ctrl_points(ctrl_points)
 
         # Filter out sections without movement
-        filtered_pos = PlanarCubeGCSController._filter_desired_pos(
-            pos_curves["f"][:, :2]
-        )
+        filtered_pos = self._filter_desired_pos(pos_curves["f"][:, :2])
 
         if visualize:
             plot_positions_and_forces(
@@ -346,10 +353,10 @@ class PlanarCubeGCSController(ControllerBase):
 
         return filtered_pos
 
-    @staticmethod
-    def _filter_desired_pos(pos_curve):
+    def _filter_desired_pos(self, pos_curve):
+        eps = self._movement_filter_eps  # 0.0001
         diff = np.diff(pos_curve, axis=0)
         dist = np.linalg.norm(diff, axis=1)
-        mask = np.concatenate(([True], dist > 0.01))
+        mask = np.concatenate(([True], dist > eps))
         filtered_pos = pos_curve[mask]
         return filtered_pos

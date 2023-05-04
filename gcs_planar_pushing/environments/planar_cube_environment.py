@@ -33,6 +33,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         scene_directive_path: str,
         initial_box_position: List[float],
         initial_finger_position: List[float],
+        visualize_log_graphs: bool,
     ):
         super().__init__(controller, time_step, scene_directive_path)
 
@@ -41,6 +42,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._controller.set_initial_state(
             initial_box_position, initial_finger_position
         )
+        self._visualize_log_graphs = visualize_log_graphs
 
         self._meshcat = None
         self._simulator = None
@@ -155,10 +157,8 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._visualizer.StopRecording()
         self._visualizer.PublishRecording()
 
-        context = self._simulator.get_mutable_context()
-        # action_log = self._action_logger.FindLog(context)
-        state_log = self._state_logger.FindLog(context)
-        # self._plot_logs(state_log, action_log)
+        if self._visualize_log_graphs:
+            self._visualize_logs()
 
     def generate_data(
         self, log_every_k_sim_timesteps: int
@@ -174,6 +174,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         state_data = np.zeros((n_data, 2))
         action_data = np.zeros((n_data, 2))  # finger_x, finger_y
 
+        self._visualizer.StartRecording()
         for i, t in enumerate(sample_times):
             context = self._simulator.get_context()
             self._simulator.AdvanceTo(t)
@@ -193,17 +194,24 @@ class PlanarCubeEnvironment(EnvironmentBase):
                 self._diagram.GetOutputPort("action").Eval(context)
             )
 
-            print(f"state: {state_data[i]}")
-            print(f"action: {action_data[i]}")
+            # print(f"state: {state_data[i]}")
+            # print(f"action: {action_data[i]}")
             # plt.imshow(rgb_image)
             # plt.show()
 
+        self._visualizer.StopRecording()
+        self._visualizer.PublishRecording()
+
+        if self._visualize_log_graphs:
+            self._visualize_logs()
+
+        return image_data, state_data, action_data
+
+    def _visualize_logs(self) -> None:
         context = self._simulator.get_mutable_context()
         action_log = self._action_logger.FindLog(context)
         state_log = self._state_logger.FindLog(context)
         self._plot_logs(state_log, action_log)
-
-        return image_data, state_data, action_data
 
     # Not being used to generate data, only for debugging
     def _plot_logs(self, state_log, action_log) -> None:
@@ -211,13 +219,13 @@ class PlanarCubeEnvironment(EnvironmentBase):
         axis = axs[0]
         axis.step(state_log.sample_times(), state_log.data().transpose()[:, :4])
         axis.legend([r"$q_{bx}$", r"$q_{by}$", r"$q_{fx}$", r"$q_{fy}$"])
-        axis.set_ylabel("state box")
+        axis.set_ylabel("Positions")
         axis.set_xlabel("t")
 
         axis = axs[1]
         axis.step(state_log.sample_times(), state_log.data().transpose()[:, 4:])
         axis.legend([r"$v_{bx}$", r"$v_{by}$", r"$v_{fx}$", r"$v_{fy}$"])
-        axis.set_ylabel("state finger")
+        axis.set_ylabel("Velocities")
         axis.set_xlabel("t")
 
         axis = axs[2]

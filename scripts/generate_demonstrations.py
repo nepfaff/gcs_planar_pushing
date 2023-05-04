@@ -2,6 +2,7 @@
 import os
 import pathlib
 import numpy as np
+from gcs_planar_pushing.utils.util import save_meshcat
 import hydra
 from hydra.utils import instantiate
 from hydra.core.hydra_config import HydraConfig
@@ -53,7 +54,7 @@ def main(cfg: OmegaConf):
     # print(f"Robot position: {robot_pos}")
 
     # # Override for testing: 1 trajectory
-    object_pos, robot_pos = np.array([[-1.0, 0.0]]), np.array([[-5.0, 0.0]])
+    # object_pos, robot_pos = np.array([[-1.0, 0.0]]), np.array([[5.0, 0.0]])
 
     # # Override for testing: 3 trajectories
     # object_pos = np.array([[-1.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
@@ -85,11 +86,18 @@ def main(cfg: OmegaConf):
             "img": image_data,
         }
         buffer.add_episode(episode)
+        if cfg.save_meshcats:
+            save_meshcat(
+                os.path.join(full_log_dir, "meshcats", f"meshcat_{date_time}_{i}"),
+                meshcat,
+            )
 
-    buffer.save_to_path(
-        os.path.join(full_log_dir, f"replay_{date_time}.zarr"),
-        chunk_length=cfg.chunk_length,
-    )
+        # Save after every episode
+        buffer.save_to_path(
+            os.path.join(full_log_dir, f"replay_{date_time}.zarr"),
+            chunk_length=cfg.chunk_length,
+        )
+        print(f"Completed episode {i} of {len(object_pos)}")
 
 
 if __name__ == "__main__":
