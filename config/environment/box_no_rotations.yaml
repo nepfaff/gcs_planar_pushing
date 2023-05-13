@@ -7,3 +7,8 @@ initial_finger_position: [0.0, 0.0]
 visualize_log_graphs: False
 simulation_timeout_s: 1000
 box_goal_distance_threshold: 0.08
+disturbance_probability_per_timestep: 0.0 # Range [0,1]
+disturbance_min_force_magnitude: 50.0
+disturbance_max_force_magnitude: 300.0
+disturbance_num_timesteps_to_apply_force: 5
+disturbances_max_number: 3

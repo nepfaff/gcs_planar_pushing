@@ -1,6 +1,6 @@
 import copy
 from typing import List, Tuple
-from gcs_planar_pushing.images.image_generator import ImageGenerator
+
 from pydrake.all import (
     StartMeshcat,
     DiagramBuilder,
@@ -17,11 +17,12 @@ from pydrake.all import (
 )
 import numpy as np
 import matplotlib.pyplot as plt
-from gcs_planar_pushing.utils.util import AddRgbdSensors
 
+from gcs_planar_pushing.utils.util import AddRgbdSensors
+from gcs_planar_pushing.images.image_generator import ImageGenerator
 from .environment_base import EnvironmentBase
 from gcs_planar_pushing.controllers import ControllerBase
-from gcs_planar_pushing.utils import get_parser
+from gcs_planar_pushing.utils import get_parser, ExternalForceSystem
 
 
 class PlanarCubeEnvironment(EnvironmentBase):
@@ -35,6 +36,11 @@ class PlanarCubeEnvironment(EnvironmentBase):
         visualize_log_graphs: bool,
         simulation_timeout_s: float,
         box_goal_distance_threshold: float,
+        disturbance_probability_per_timestep: float,
+        disturbance_min_force_magnitude: float,
+        disturbance_max_force_magnitude: float,
+        disturbance_num_timesteps_to_apply_force: int,
+        disturbances_max_number: int,
     ):
         super().__init__(controller, time_step, scene_directive_path)
 
@@ -46,6 +52,15 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._visualize_log_graphs = visualize_log_graphs
         self._simulation_timeout_s = simulation_timeout_s
         self._box_goal_distance_threshold = box_goal_distance_threshold
+        self._disturbance_probability_per_timestep = (
+            disturbance_probability_per_timestep
+        )
+        self._disturbance_min_force_magnitude = disturbance_min_force_magnitude
+        self._disturbance_max_force_magnitude = disturbance_max_force_magnitude
+        self._disturbance_num_timesteps_to_apply_force = (
+            disturbance_num_timesteps_to_apply_force
+        )
+        self._disturbances_max_number = disturbances_max_number
 
         self._meshcat = None
         self._simulator = None
@@ -92,6 +107,15 @@ class PlanarCubeEnvironment(EnvironmentBase):
         # )
         # self._image_logger = AbstractValueLogger(rgbd_sensors[0].color_image_output_port(), builder)
 
+        box = plant.GetBodyByName("box")
+        self._external_force_system: ExternalForceSystem = builder.AddSystem(
+            ExternalForceSystem(box.index())
+        )
+        builder.Connect(
+            self._external_force_system.get_output_port(),
+            plant.get_applied_spatial_force_input_port(),
+        )
+
         diagram = builder.Build()
 
         self._simulator = Simulator(diagram)
@@ -99,7 +123,6 @@ class PlanarCubeEnvironment(EnvironmentBase):
         # Set initial cube and sphere position
         context = self._simulator.get_mutable_context()
         plant_context = plant.GetMyMutableContextFromRoot(context)
-        box = plant.GetBodyByName("box")
         self._box_model_instance = box.model_instance()
 
         if box.is_floating():
@@ -151,17 +174,61 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         print(f"Meshcat URL: {self._meshcat.web_url()}")
 
+        box_center_height = 0.5
+        disturbance_timestep = -1
+        num_disturbances = 0
         current_sim_time_s = 0.0
         while current_sim_time_s <= self._simulation_timeout_s:
-            box_state = self.plant.GetPositions(
+            box_positions = self.plant.GetPositions(
                 self.plant_context, self._box_model_instance
             )
             # Goal is to push the box to the origin
-            distance_to_goal = np.linalg.norm(box_state)
+            distance_to_goal = np.linalg.norm(box_positions)
             if distance_to_goal < self._box_goal_distance_threshold:
                 print(f"Reached the goal state! Distance to goal: {distance_to_goal}")
                 print("Outcome is SUCCESS")
                 break
+
+            # Apply disturbance to box
+            random_sample = np.random.uniform()
+            if disturbance_timestep > -1:
+                disturbance_timestep += 1
+                self._external_force_system.set_wrench_application_point(
+                    np.concatenate([box_positions, np.array([box_center_height])])
+                )
+                if (
+                    disturbance_timestep
+                    >= self._disturbance_num_timesteps_to_apply_force
+                ):
+                    disturbance_timestep = -1
+            elif (
+                num_disturbances < self._disturbances_max_number
+                and random_sample < self._disturbance_probability_per_timestep
+            ):
+                num_disturbances += 1
+                force_direction = np.array(
+                    [[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]]
+                )[np.random.randint(low=0, high=4)]
+                force = (
+                    np.random.uniform(
+                        low=self._disturbance_min_force_magnitude,
+                        high=self._disturbance_max_force_magnitude,
+                    )
+                    * force_direction
+                )
+                torque = np.zeros(3)
+
+                print(f"Applying force to box: {force}")
+
+                self._external_force_system.set_wrench(
+                    np.concatenate([force, np.array([box_center_height]), torque])
+                )
+                self._external_force_system.set_wrench_application_point(
+                    np.concatenate([box_positions, np.array([box_center_height])])
+                )
+                disturbance_timestep = 0
+            else:
+                self._external_force_system.set_wrench(np.zeros(6))
 
             current_sim_time_s += self._time_step
             self._simulator.AdvanceTo(current_sim_time_s)
