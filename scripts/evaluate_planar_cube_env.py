@@ -39,17 +39,20 @@ def main(cfg: OmegaConf):
     robot_positions = initial_condition_data.robot_pos[:]
 
     num_success = 0
-    sim_times = []
+    success_sim_times = []
     for i in range(cfg.num_evaluation_rounds):
         for j, (object_pos, robot_pos) in tqdm(
             enumerate(zip(object_positions, robot_positions))
         ):
             cfg.environment.initial_box_position = object_pos.tolist()
             cfg.environment.initial_finger_position = robot_pos.tolist()
+
+            start_time = time.time()
             success, simulation_time = setup_env_and_simulate(cfg)
+            run_time = time.time() - start_time
             if success:
                 num_success += 1
-                sim_times.append([f"sim_{i}_{j}", simulation_time])
+                success_sim_times.append([f"sim_{i}_{j}", simulation_time, run_time])
 
             # Save simulation
             html = open("simulation.html")
@@ -64,18 +67,25 @@ def main(cfg: OmegaConf):
     wandb.log(
         {
             "success_simulation_times": wandb.Table(
-                data=sim_times, columns=["simulation_idx", "time_s"]
+                data=success_sim_times,
+                columns=["simulation_idx", "sim_time_s", "run_time_s"],
             )
         }
     )
 
-    sim_times = np.array(sim_times)[:, 1]
+    success_sim_times = np.asarray(success_sim_times)
+    sim_times = [float(el) for el in success_sim_times[:, 1]]
+    run_times = [float(el) for el in success_sim_times[:, 2]]
     metric_dict = {
         "Success rate": num_success / len(object_positions),
         "Average success simulation time": np.mean(sim_times),
         "Std success simulation time": np.std(sim_times),
         "Max success simulation time": np.max(sim_times),
         "Minsuccess simulation time": np.min(sim_times),
+        "Average success run time": np.mean(run_times),
+        "Std success run time": np.std(run_times),
+        "Max success run time": np.max(run_times),
+        "Minsuccess run time": np.min(run_times),
     }
     wandb.log(metric_dict)
     print(metric_dict)
