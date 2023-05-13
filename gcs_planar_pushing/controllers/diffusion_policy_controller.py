@@ -55,6 +55,13 @@ class DiffusionPolicy(LeafSystem):
         self._action_horizon = 8
         self._action_cache = deque([], maxlen=self._action_horizon)
 
+        if torch.cuda.is_available():
+            self._device = torch.device("cuda:0")
+            torch.cuda.set_device(self._device)
+        else:
+            self._device = torch.device("cpu")
+        print(f"Using device {self._device}")
+
         # Get dataset specific normalizer
         dataset = DrakeCubeImageDataset(
             horizon=self._pred_horizon,
@@ -70,7 +77,7 @@ class DiffusionPolicy(LeafSystem):
 
         self._policy = self._load_diffusion_policy(
             pathlib.Path(checkpoint_path), normalizer
-        )
+        ).to(self._device)
 
         self.DeclareVectorOutputPort(
             "robot_pos_desired", len(initial_pos), self._get_desired_pos
@@ -157,7 +164,9 @@ class DiffusionPolicy(LeafSystem):
                 "agent_pos": robot_pos_actual[np.newaxis, np.newaxis, :],
                 "image": image_obs_current[np.newaxis, np.newaxis, :],
             }
-            obs_dict = dict_apply(obs_dict_np, lambda x: torch.from_numpy(x))
+            obs_dict = dict_apply(
+                obs_dict_np, lambda x: torch.from_numpy(x).to(self._device)
+            )
 
             if self._profile_run_time:
                 print(f"Reading image data took {time.time()-start_time} seconds.")
@@ -172,7 +181,7 @@ class DiffusionPolicy(LeafSystem):
                     )
 
             action_dict_np = dict_apply(
-                action_dict, lambda x: x.squeeze(0).detach().to("cpu").numpy()
+                action_dict, lambda x: x.squeeze(0).detach().cpu().numpy()
             )
             actions = action_dict_np["action"]
             self._action_cache.extend(actions)
