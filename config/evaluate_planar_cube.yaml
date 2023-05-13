@@ -3,3 +3,4 @@ defaults:
   - controller: diffusion_policy
 
 initial_conditions_zarr_path: ""
+num_evaluation_rounds: 5

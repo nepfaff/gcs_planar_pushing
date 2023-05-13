@@ -40,25 +40,26 @@ def main(cfg: OmegaConf):
 
     num_success = 0
     sim_times = []
-    for i, (object_pos, robot_pos) in tqdm(
-        enumerate(zip(object_positions, robot_positions))
-    ):
-        cfg.environment.initial_box_position = object_pos.tolist()
-        cfg.environment.initial_finger_position = robot_pos.tolist()
-        success, simulation_time = setup_env_and_simulate(cfg)
-        if success:
-            num_success += 1
-            sim_times.append([f"sim_{i}", simulation_time])
+    for i in range(cfg.num_evaluation_rounds):
+        for j, (object_pos, robot_pos) in tqdm(
+            enumerate(zip(object_positions, robot_positions))
+        ):
+            cfg.environment.initial_box_position = object_pos.tolist()
+            cfg.environment.initial_finger_position = robot_pos.tolist()
+            success, simulation_time = setup_env_and_simulate(cfg)
+            if success:
+                num_success += 1
+                sim_times.append([f"sim_{i}_{j}", simulation_time])
 
-        # Save simulation
-        html = open("simulation.html")
-        wandb.log(
-            {
-                f"sim_{i}_{'success' if success else 'failure'}": wandb.Html(
-                    html, inject=False
-                )
-            }
-        )
+            # Save simulation
+            html = open("simulation.html")
+            wandb.log(
+                {
+                    f"sim_{i}_{j}_{'success' if success else 'failure'}": wandb.Html(
+                        html, inject=False
+                    )
+                }
+            )
 
     wandb.log(
         {
