@@ -7,6 +7,7 @@ from omegaconf import OmegaConf
 import wandb
 import zarr
 from tqdm import tqdm
+import numpy as np
 
 from gcs_planar_pushing.environments import EnvironmentBase
 from gcs_planar_pushing.controllers import ControllerBase
@@ -38,14 +39,16 @@ def main(cfg: OmegaConf):
     robot_positions = initial_condition_data.robot_pos[:]
 
     num_success = 0
+    sim_times = []
     for i, (object_pos, robot_pos) in tqdm(
         enumerate(zip(object_positions, robot_positions))
     ):
         cfg.environment.initial_box_position = object_pos.tolist()
         cfg.environment.initial_finger_position = robot_pos.tolist()
-        success = setup_env_and_simulate(cfg)
+        success, simulation_time = setup_env_and_simulate(cfg)
         if success:
             num_success += 1
+            sim_times.append([f"sim_{i}", simulation_time])
 
         # Save simulation
         html = open("simulation.html")
@@ -57,7 +60,24 @@ def main(cfg: OmegaConf):
             }
         )
 
-    print(f"Success rate: {num_success/len(object_positions)}")
+    wandb.log(
+        {
+            "success_simulation_times": wandb.Table(
+                data=sim_times, columns=["simulation_idx", "time_s"]
+            )
+        }
+    )
+
+    sim_times = np.array(sim_times)[:, 1]
+    metric_dict = {
+        "Success rate": num_success / len(object_positions),
+        "Average success simulation time": np.mean(sim_times),
+        "Std success simulation time": np.std(sim_times),
+        "Max success simulation time": np.max(sim_times),
+        "Minsuccess simulation time": np.min(sim_times),
+    }
+    wandb.log(metric_dict)
+    print(metric_dict)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
+
 import numpy as np
 
 from gcs_planar_pushing.controllers import ControllerBase
@@ -24,10 +26,10 @@ class EnvironmentBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def simulate(self) -> bool:
+    def simulate(self) -> Tuple[bool, float]:
         """
         Simulate the environment.
-        :return: True if success and false otherwise.
+        :return: Returns a tuple of (success, simulation_time_s).
         """
         raise NotImplementedError
 

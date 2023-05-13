@@ -167,9 +167,9 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._meshcat.SetObject(name, Box(1, 1, 0.3), rgba=color)
         self._meshcat.SetTransform(name, pose)
 
-    def simulate(self) -> bool:
+    def simulate(self) -> Tuple[bool, float]:
         """
-        :return: Returns true and success and false on failure.
+        :return: Returns a tuple of (success, simulation_time_s).
         """
         self._visualizer.StartRecording()
         print(f"Meshcat URL: {self._meshcat.web_url()}")
@@ -252,7 +252,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         if self._visualize_log_graphs:
             self._visualize_logs()
 
-        return success
+        return success, current_sim_time_s
 
     def generate_data(
         self, log_every_k_sim_timesteps: int
