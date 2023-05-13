@@ -1,4 +1,3 @@
-import atexit
 import copy
 from typing import List, Tuple
 from gcs_planar_pushing.images.image_generator import ImageGenerator
@@ -34,6 +33,8 @@ class PlanarCubeEnvironment(EnvironmentBase):
         initial_box_position: List[float],
         initial_finger_position: List[float],
         visualize_log_graphs: bool,
+        simulation_timeout_s: float,
+        box_goal_distance_threshold: float,
     ):
         super().__init__(controller, time_step, scene_directive_path)
 
@@ -43,6 +44,8 @@ class PlanarCubeEnvironment(EnvironmentBase):
             initial_box_position, initial_finger_position
         )
         self._visualize_log_graphs = visualize_log_graphs
+        self._simulation_timeout_s = simulation_timeout_s
+        self._box_goal_distance_threshold = box_goal_distance_threshold
 
         self._meshcat = None
         self._simulator = None
@@ -97,7 +100,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         context = self._simulator.get_mutable_context()
         plant_context = plant.GetMyMutableContextFromRoot(context)
         box = plant.GetBodyByName("box")
-        box_model_instance = box.model_instance()
+        self._box_model_instance = box.model_instance()
 
         if box.is_floating():
             plant.SetFreeBodyPose(
@@ -107,7 +110,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
             )
         else:
             plant.SetPositions(
-                plant_context, box_model_instance, self._initial_box_position
+                plant_context, self._box_model_instance, self._initial_box_position
             )
 
         sphere = plant.GetBodyByName("sphere_actuated")
@@ -136,7 +139,6 @@ class PlanarCubeEnvironment(EnvironmentBase):
     def _draw_object(
         self, name: str, x: np.array, color: Rgba = Rgba(0, 1, 0, 1.0)
     ) -> None:
-
         # Assumes x = [x, y]
         pose = RigidTransform(RotationMatrix(), [*x, 0])
         self._meshcat.SetObject(name, Box(1, 1, 0.3), rgba=color)
@@ -149,13 +151,34 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         print(f"Meshcat URL: {self._meshcat.web_url()}")
 
-        # sim_duration = 5.0
-        # for t in np.arange(0.0, sim_duration, self._time_step):
-        #     self._simulator.AdvanceTo(t)
-        self._simulator.AdvanceTo(1000.0)
+        current_sim_time_s = 0.0
+        while current_sim_time_s <= self._simulation_timeout_s:
+            box_state = self.plant.GetPositions(
+                self.plant_context, self._box_model_instance
+            )
+            # Goal is to push the box to the origin
+            distance_to_goal = np.linalg.norm(box_state)
+            if distance_to_goal < self._box_goal_distance_threshold:
+                print(f"Reached the goal state! Distance to goal: {distance_to_goal}")
+                print("Outcome is SUCCESS")
+                break
+
+            current_sim_time_s += self._time_step
+            self._simulator.AdvanceTo(current_sim_time_s)
+
+        if current_sim_time_s >= self._simulation_timeout_s:
+            print(
+                "Failed to reach the goal state within the timeout! Distance to goal: "
+                + f"{distance_to_goal}"
+            )
+            print("Outcome is FAILURE")
 
         self._visualizer.StopRecording()
         self._visualizer.PublishRecording()
+
+        html = self._meshcat.StaticHtml()
+        with open("simulation.html", "w") as f:
+            f.write(html)
 
         if self._visualize_log_graphs:
             self._visualize_logs()
