@@ -1,3 +1,5 @@
 defaults:
   - environment: box_no_rotations
   - controller: diffusion_policy
+
+initial_conditions_zarr_path: ""

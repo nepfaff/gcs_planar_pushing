@@ -14,5 +14,6 @@ setup(
         "black",
         "hydra-core",
         "omegaconf",
+        "wandb",
     ],
 )

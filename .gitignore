@@ -2,6 +2,8 @@
 *.egg-info
 *venv
 outputs
+data
 *.svg
 /demonstration_data
 *.html
+wandb

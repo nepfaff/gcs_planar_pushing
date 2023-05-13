@@ -38,3 +38,22 @@ python scripts/run_demo.py --config-name basic.yaml controller=diffusion_policy 
 environment.initial_box_position='[-1,2]' environment.initial_finger_position='[3,3]' \
 environment.disturbance_probability_per_timestep=0.005 environment.disturbances_max_number=3
 ```
+
+## Evaluating controllers on planar cube environment
+
+Example: Evaluating diffusion policy without disturbances:
+```
+python scripts/evaluate_planar_cube_env.py --config-name evaluate_planar_cube.yaml \
+initial_conditions_zarr_path=data/initial_positions_2023-05-13_10-36-08.zarr/
+```
+where `initial_conditions_zarr_path` is the path to a `zarr` file containing the initial
+experiment conditions with the following data format:
+- "object_pos" of shape (N,2)
+- "robot_pos" of shape (N,2)
+
+Example: Evaluating diffusion policy with disturbances:
+```
+python scripts/evaluate_planar_cube_env.py --config-name evaluate_planar_cube.yaml \
+environment.disturbance_probability_per_timestep=0.005 environment.disturbances_max_number=3 \
+initial_conditions_zarr_path=data/initial_positions_2023-05-13_10-36-08.zarr/
+```

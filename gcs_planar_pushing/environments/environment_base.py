@@ -24,10 +24,13 @@ class EnvironmentBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def simulate(self) -> None:
-        """Simulate the environment."""
+    def simulate(self) -> bool:
+        """
+        Simulate the environment.
+        :return: True if success and false otherwise.
+        """
         raise NotImplementedError
 
-    def generate_data(self) -> np.array:
+    def generate_data(self) -> np.ndarray:
         """Generate data from the environment."""
         raise NotImplementedError

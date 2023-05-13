@@ -167,11 +167,11 @@ class PlanarCubeEnvironment(EnvironmentBase):
         self._meshcat.SetObject(name, Box(1, 1, 0.3), rgba=color)
         self._meshcat.SetTransform(name, pose)
 
-    def simulate(self) -> None:
-        print("Press 'Stop Simulation' in MeshCat to continue.")
-
+    def simulate(self) -> bool:
+        """
+        :return: Returns true and success and false on failure.
+        """
         self._visualizer.StartRecording()
-
         print(f"Meshcat URL: {self._meshcat.web_url()}")
 
         box_center_height = 0.5
@@ -187,6 +187,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
             if distance_to_goal < self._box_goal_distance_threshold:
                 print(f"Reached the goal state! Distance to goal: {distance_to_goal}")
                 print("Outcome is SUCCESS")
+                success = True
                 break
 
             # Apply disturbance to box
@@ -239,6 +240,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
                 + f"{distance_to_goal}"
             )
             print("Outcome is FAILURE")
+            success = False
 
         self._visualizer.StopRecording()
         self._visualizer.PublishRecording()
@@ -249,6 +251,8 @@ class PlanarCubeEnvironment(EnvironmentBase):
 
         if self._visualize_log_graphs:
             self._visualize_logs()
+
+        return success
 
     def generate_data(
         self, log_every_k_sim_timesteps: int
