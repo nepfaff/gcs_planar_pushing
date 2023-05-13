@@ -1,8 +1,9 @@
 from .controller_base import ControllerBase
 
-from typing import Dict, Tuple
+from typing import Dict
 import pathlib
 from collections import deque
+import time
 
 from pydrake.all import (
     DiagramBuilder,
@@ -38,6 +39,7 @@ class DiffusionPolicy(LeafSystem):
         initial_pos: np.ndarray,
         checkpoint_path: str,
         dataset_path: str,
+        profile_run_time: bool,
     ):
         """
         Args:
@@ -45,6 +47,7 @@ class DiffusionPolicy(LeafSystem):
         """
         super().__init__()
         self._desired_pos = initial_pos
+        self._profile_run_time = profile_run_time
 
         # TODO: Make these arguments
         self._pred_horizon = 16
@@ -139,6 +142,8 @@ class DiffusionPolicy(LeafSystem):
             return
 
         if len(self._action_cache) == 0:  # Compute new actions
+            start_time = time.time()
+
             image_obs_current = self._image_obs_current_port.Eval(context).data
             # Discard alpha channel
             image_obs_current = image_obs_current[:, :, :3]
@@ -154,9 +159,17 @@ class DiffusionPolicy(LeafSystem):
             }
             obs_dict = dict_apply(obs_dict_np, lambda x: torch.from_numpy(x))
 
+            if self._profile_run_time:
+                print(f"Reading image data took {time.time()-start_time} seconds.")
+
             self._policy.eval()
             with torch.no_grad():
+                start_time = time.time()
                 action_dict = self._policy.predict_action(obs_dict)
+                if self._profile_run_time:
+                    print(
+                        f"Predicting next actions took {time.time()-start_time} seconds."
+                    )
 
             action_dict_np = dict_apply(
                 action_dict, lambda x: x.squeeze(0).detach().to("cpu").numpy()
@@ -175,11 +188,13 @@ class DiffusionPolicyController(ControllerBase):
         self,
         time_step: float,
         sphere_pid_gains: Dict[str, float],
+        profile_run_time: bool,
     ):
         super().__init__(time_step)
 
         self._sphere_pid_gains = sphere_pid_gains
         self._num_sphere_positions = 2
+        self._profile_run_time = profile_run_time
 
     def _setup_sphere_controller(
         self, builder: DiagramBuilder, plant: MultibodyPlant
@@ -221,7 +236,8 @@ class DiffusionPolicyController(ControllerBase):
             DiffusionPolicy(
                 initial_pos=self._initial_finger_position,
                 dataset_path="../diffusion_policy/data/replay_2023-05-03_00-07-29.zarr",
-                checkpoint_path="../diffusion_policy/data/latest.ckpt",
+                checkpoint_path="../diffusion_policy/data/epoch=0550-val_loss=0.012.ckpt",
+                profile_run_time=self._profile_run_time,
             )
         )
 
