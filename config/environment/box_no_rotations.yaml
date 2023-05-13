@@ -6,4 +6,4 @@ initial_box_position: [2, 0.0]
 initial_finger_position: [0.0, 0.0]
 visualize_log_graphs: False
 simulation_timeout_s: 1000
-box_goal_distance_threshold: 0.03
+box_goal_distance_threshold: 0.08

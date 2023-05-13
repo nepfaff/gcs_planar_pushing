@@ -4,3 +4,4 @@
 outputs
 *.svg
 /demonstration_data
+*.html
