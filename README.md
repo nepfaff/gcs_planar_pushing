@@ -23,3 +23,10 @@ python scripts/run_demo.py --config-name basic.yaml
 ```
 
 where `basic.yaml` should be replaced with your config name.
+
+### Running Diffusion Policy
+
+A pre-trained diffusion policy controller can be run as follows:
+```
+python scripts/run_demo.py --config-name basic.yaml controller=diffusion_policy environment.initial_box_position='[2,0]' environment.initial_finger_position='[3,3]'
+```
