@@ -1,12 +1,12 @@
 _target_: gcs_planar_pushing.environments.planar_cube_environment.PlanarCubeEnvironment
 
-time_step: 0.1
+time_step: 0.01
 scene_directive_path: models/planar_cube/planar_pushing_no_rotations.dmd.yaml
 initial_box_position: [2, 0.0]
 initial_finger_position: [0.0, 0.0]
 visualize_log_graphs: False
 simulation_timeout_s: 500
-box_goal_distance_threshold: 0.08
+box_goal_distance_threshold: 0.1
 disturbance_probability_per_timestep: 0.0 # Range [0,1]
 disturbance_min_force_magnitude: 50.0
 disturbance_max_force_magnitude: 300.0
