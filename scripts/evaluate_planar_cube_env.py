@@ -17,8 +17,12 @@ def setup_env_and_simulate(cfg: OmegaConf) -> bool:
     controller: ControllerBase = instantiate(cfg.controller)
     environment: EnvironmentBase = instantiate(cfg.environment, controller=controller)
     environment.setup()
-    success = environment.simulate()
-    return success
+    success, simulation_time = environment.simulate()
+
+    # Cleanup to prevent running out of GPU memory
+    del controller, environment
+
+    return success, simulation_time
 
 
 @hydra.main(

@@ -29,7 +29,6 @@ class ProblemGenerator:
         ), "Workspace must be larger than the sum of the object and robot radii."
 
     def generate_initial_positions(self):
-
         # Hardcoded robot and object dimensions:
         dim_robot = 2
         dim_object = 2

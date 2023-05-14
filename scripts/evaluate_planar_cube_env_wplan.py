@@ -68,6 +68,9 @@ def main(cfg: OmegaConf):
                 }
             )
 
+            # Cleanup to prevent running out of GPU memory
+            del controller, environment
+
     wandb.log(
         {
             "success_simulation_times": wandb.Table(

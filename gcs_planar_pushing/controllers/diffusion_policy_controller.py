@@ -4,6 +4,7 @@ from typing import Dict
 import pathlib
 from collections import deque
 import time
+import gc
 
 from pydrake.all import (
     DiagramBuilder,
@@ -189,6 +190,13 @@ class DiffusionPolicy(LeafSystem):
         self._desired_pos = self._action_cache.popleft()
         output.SetFromVector(self._desired_pos)
 
+    def __del__(self):
+        print("Cleaning up diffusion policy GPU memory.")
+        self._policy.cpu()
+        del self._policy
+        gc.collect()
+        torch.cuda.empty_cache()
+
 
 class DiffusionPolicyController(ControllerBase):
     """A Diffusion Policy controller."""
@@ -241,14 +249,13 @@ class DiffusionPolicyController(ControllerBase):
         self, builder: DiagramBuilder, plant: MultibodyPlant, rgbd_sensor: RgbdSensor
     ) -> System:
         # TODO: Make these arguments
-        finger_position_source = builder.AddSystem(
-            DiffusionPolicy(
-                initial_pos=self._initial_finger_position,
-                dataset_path="../diffusion_policy/data/replay_2023-05-03_00-07-29.zarr",
-                checkpoint_path="../diffusion_policy/data/epoch=0550-val_loss=0.012.ckpt",
-                profile_run_time=self._profile_run_time,
-            )
+        self._diffusion_policy = DiffusionPolicy(
+            initial_pos=self._initial_finger_position,
+            dataset_path="../diffusion_policy/data/replay_2023-05-03_00-07-29.zarr",
+            checkpoint_path="../diffusion_policy/data/epoch=0550-val_loss=0.012.ckpt",
+            profile_run_time=self._profile_run_time,
         )
+        finger_position_source = builder.AddSystem(self._diffusion_policy)
 
         # Add discrete derivative to command velocities.
         desired_state_source = builder.AddSystem(
@@ -294,3 +301,8 @@ class DiffusionPolicyController(ControllerBase):
             finger_state_source.get_output_port(),
             sphere_controller.get_input_port_desired_state(),
         )
+
+    def __del__(self):
+        # Doing it this way seems necessary (del insufficient)
+        self._diffusion_policy.__del__()
+        del self._diffusion_policy
