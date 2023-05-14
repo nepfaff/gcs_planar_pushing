@@ -2,6 +2,7 @@ from .controller_base import ControllerBase
 
 from functools import reduce
 from typing import Dict, List
+import time
 
 from pydrake.all import (
     DiagramBuilder,
@@ -164,6 +165,7 @@ class PlanarCubeGCSController(ControllerBase):
         Returns:
             np.ndarray: The finger position path of shape (N, 3).
         """
+        start_time = time.time()
         # Bezier curve params
         problem_dim = 3
         bezier_curve_order = 1
@@ -344,6 +346,8 @@ class PlanarCubeGCSController(ControllerBase):
 
         # Filter out sections without movement
         filtered_pos = self._filter_desired_pos(pos_curves["f"][:, :2])
+
+        self._plan_time = time.time() - start_time
 
         if visualize:
             plot_positions_and_forces(

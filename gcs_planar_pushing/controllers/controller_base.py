@@ -10,6 +10,7 @@ class ControllerBase(ABC):
     def __init__(self, time_step: float):
         self._time_step = time_step
         self._sim_duration = None
+        self._plan_time = 0
 
     def get_sim_duration(self):
         if self._sim_duration is None:

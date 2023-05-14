@@ -8,6 +8,7 @@ from hydra.utils import instantiate
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import OmegaConf
 from tqdm import tqdm
+import zarr
 from pydrake.all import (
     StartMeshcat,
 )
@@ -27,6 +28,9 @@ def main(cfg: OmegaConf):
     now = datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     print(cfg)
+    hydra_config = HydraConfig.get()
+    full_log_dir = hydra_config.runtime.output_dir
+
     meshcat = StartMeshcat()
     # Use teleop environment to generate initial positions:
     sphere_pid_gains = OmegaConf.create({"kp": 100, "kd": 10, "ki": 1})
@@ -50,6 +54,13 @@ def main(cfg: OmegaConf):
         object=environment.object,
     )
     object_pos, robot_pos = problem_generator.generate_initial_positions()
+    initial_positions = zarr.open_group(
+        os.path.join(full_log_dir, f"initial_positions_{date_time}.zarr"), mode="w"
+    )
+    initial_positions["object_pos"] = object_pos
+    initial_positions["robot_pos"] = robot_pos
+    if cfg.only_generate_initial_positions:
+        return
     # print(f"Object position: {object_pos}")
     # print(f"Robot position: {robot_pos}")
 
@@ -60,8 +71,6 @@ def main(cfg: OmegaConf):
     # object_pos = np.array([[-1.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     # robot_pos = np.array([[-5.0, 0.0], [5.0, 0.0], [0.0, 5.0]])
 
-    hydra_config = HydraConfig.get()
-    full_log_dir = hydra_config.runtime.output_dir
     buffer = ReplayBuffer.create_empty_numpy()
     # Now use execution controller
     for i in tqdm(range(len(object_pos)), desc="Generating demonstrations"):

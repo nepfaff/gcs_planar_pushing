@@ -4,8 +4,9 @@ defaults:
   - problem_generator: problem_generator
 
 problem_generator:
-  n_samples: 100
+  n_samples: 20
 
 chunk_length: -1
 log_every_k_sim_timesteps: 1000
 save_meshcats: True
+only_generate_initial_positions: True
