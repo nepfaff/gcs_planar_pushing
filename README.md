@@ -57,3 +57,10 @@ python scripts/evaluate_planar_cube_env.py --config-name evaluate_planar_cube.ya
 environment.disturbance_probability_per_timestep=0.005 environment.disturbances_max_number=3 \
 initial_conditions_zarr_path=data/initial_positions_2023-05-13_10-36-08.zarr/
 ```
+
+Example: Evaluating GCS plan without disturbances:
+```
+python scripts/evaluate_planar_cube_env.py --config-name evaluate_planar_cube.yaml \
+initial_conditions_zarr_path=data/initial_positions_2023-05-13_10-36-08.zarr/ \
+controller=gcs_open_loop
+```
