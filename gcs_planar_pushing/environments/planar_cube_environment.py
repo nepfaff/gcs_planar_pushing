@@ -328,3 +328,7 @@ class PlanarCubeEnvironment(EnvironmentBase):
         axis.set_ylabel("u")
         axis.set_xlabel("t")
         plt.show()
+
+        def __del__(self):
+            self._meshcat.Delete()
+            self._meshcat.DeleteAddedControls()
