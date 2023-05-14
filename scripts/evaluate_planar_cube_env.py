@@ -81,7 +81,8 @@ def main(cfg: OmegaConf):
     sim_times = [float(el) for el in success_sim_times[:, 1]]
     run_times = [float(el) for el in success_sim_times[:, 2]]
     metric_dict = {
-        "Success rate": num_success / len(object_positions),
+        "Success rate": num_success
+        / (len(object_positions) * cfg.num_evaluation_rounds),
         "Average success simulation time": np.mean(sim_times),
         "Std success simulation time": np.std(sim_times),
         "Max success simulation time": np.max(sim_times),
