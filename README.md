@@ -14,6 +14,16 @@ Install `pre-commit` for automatic black formatting:
 pre-commit install
 ```
 
+## Generating GCS demonstrations
+
+The following script can be used to generate demonstrations for training the diffusion policy.
+The demonstrations are created using GCS planning and open-loop execution.
+
+```
+python scripts/generate_demonstrations.py --config-name demonstrations.yaml \
+only_generate_initial_positions=False problem_generator.n_samples=100
+```
+
 ## Runing a single experiment
 
 Create a config file specifying the experiment in `config` and run it using the following command:

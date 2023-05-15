@@ -60,6 +60,7 @@ def main(cfg: OmegaConf):
     initial_positions["object_pos"] = object_pos
     initial_positions["robot_pos"] = robot_pos
     if cfg.only_generate_initial_positions:
+        print("Finished generating initial positions. Terminating.")
         return
     # print(f"Object position: {object_pos}")
     # print(f"Robot position: {robot_pos}")
