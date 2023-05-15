@@ -178,10 +178,17 @@ class PlanarCubeEnvironment(EnvironmentBase):
         disturbance_timestep = -1
         num_disturbances = 0
         current_sim_time_s = 0.0
+        self.episode_box_positions = []
+        self.episode_robot_positions = []
         while current_sim_time_s <= self._simulation_timeout_s:
             box_positions = self.plant.GetPositions(
                 self.plant_context, self._box_model_instance
             )
+            robot_positions = self.plant.GetPositions(
+                self.plant_context, self.robot.model_instance()
+            )
+            self.episode_box_positions.append(box_positions)
+            self.episode_robot_positions.append(robot_positions)
             # Goal is to push the box to the origin
             distance_to_goal = np.linalg.norm(box_positions)
             if distance_to_goal < self._box_goal_distance_threshold:

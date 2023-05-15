@@ -1,8 +1,9 @@
 import pathlib
 import time
-
+import os
 import hydra
 from hydra.utils import instantiate
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import OmegaConf
 import wandb
 import zarr
@@ -25,6 +26,8 @@ def main(cfg: OmegaConf):
         mode="online",
         config=OmegaConf.to_container(cfg, resolve=True),
     )
+    hydra_config = HydraConfig.get()
+    full_log_dir = hydra_config.runtime.output_dir
 
     script_start_time = time.time()
 
@@ -54,6 +57,12 @@ def main(cfg: OmegaConf):
             start_time = time.time()
             success, simulation_time = environment.simulate()
             run_time = time.time() - start_time
+
+            positions_log = zarr.open_group(
+                os.path.join(full_log_dir, f"positions_{i}_{j}.zarr"), mode="w"
+            )
+            positions_log["object_pos"] = environment.episode_box_positions
+            positions_log["robot_pos"] = environment.episode_robot_positions
 
             if success:
                 num_success += 1
