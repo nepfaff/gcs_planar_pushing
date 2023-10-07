@@ -1,5 +1,7 @@
 # gcs_planar_pushing
 
+See the [report](report.pdf) for more information about this project.
+
 ## Installation
 
 Clone the repo and execute the following commands from the repository's root.
